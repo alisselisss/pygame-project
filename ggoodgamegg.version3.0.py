@@ -9,6 +9,10 @@ HEIGHT = 800
 
 FPS = 60
 
+player_coins = 0  # Сколько монет у игрока, по сути вносится во время UPDATE у игрока или из БД
+choosen_price = 0  # Цена предположительно-выбираемого персонажа, нужна для сравнения кол-ва денег и покупки
+choosen_character = 1  # условно выбранный персонаж!
+choosen_character_to_play = 1  # номер выбранного персонажа, 1 - дефолтный
 
 def load_image(name, colorkey=None):
     # загружаем изображения
@@ -86,7 +90,7 @@ def render(intro_text, text_coord):
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
-        intro_rect.x = 250
+        intro_rect.x = 330 if i == 0 else 240
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
 
@@ -122,14 +126,14 @@ def start_screen():
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if play_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    start = False
-                    for sprite in decorative_group:
-                        sprite.kill()
+                    # start = False
+                    # for sprite in decorative_group:
+                    #     sprite.kill()
                     return
                 if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     terminate()
                 if shop_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    pass  # GO TO THE SHOP!!!
+                    shop()  # GO TO THE SHOP!!!
             if event.type == pygame.USEREVENT:
                 for btn in button_group_start:
                     if btn.rect.collidepoint(pygame.mouse.get_pos()):
@@ -147,6 +151,161 @@ def start_screen():
         pygame.display.flip()
         clock.tick(FPS)
 
+
+def shop():
+    pixel_font = pygame.font.Font('data/pixel3.ttf', 100)
+    pixel_font2 = pygame.font.Font('data/pixel3.ttf', 30)
+
+    background_image = load_image("back.png")
+    screen.blit(background_image, [0, 0])
+
+    ramka = pygame.transform.scale(load_image("ramka.png"), (900, 790))
+    screen.blit(ramka, (40, 10))
+
+    character_card = pygame.transform.scale(load_image("card.png"), (850, 550))
+    screen.blit(character_card, (340, 130))
+
+    title = pixel_font.render('SHOP', 1, (255, 255, 255))
+    title_rect = title.get_rect(left=340, top=50)
+    screen.blit(title, title_rect)
+
+    charater_card = pygame.transform.scale(load_image("card2.png"), (230, 230))
+    screen.blit(charater_card, (60, 119))
+    charater_card = pygame.transform.scale(load_image("card2.png"), (230, 230))
+    screen.blit(charater_card, (320, 119))
+    charater_card = pygame.transform.scale(load_image("card2.png"), (230, 230))
+    screen.blit(charater_card, (60, 389))
+    charater_card = pygame.transform.scale(load_image("card2.png"), (230, 230))
+    screen.blit(charater_card, (320, 389))
+
+    button_group = pygame.sprite.Group()
+
+    buy_btn = Button('Buy', 210, 710, button_group, little=1)
+    menu_btn = Button('Menu', 410, 710, button_group, little=1)
+    quit_btn = Button('Quit', 610, 710, button_group, little=1)
+
+    ben = pygame.transform.scale(load_image("benz.png"), (170, 170))
+    screen.blit(ben, (90, 153))
+    bnzd_btn = Button('Benzedrine', 100, 350, button_group, little=2, light=False)
+
+    hsc = pygame.transform.scale(load_image("crab.png"), (170, 170))
+    screen.blit(hsc, (350, 153))
+    hsc_btn = Button('H.Crab', 390, 350, button_group, little=2, light=False)
+
+    dtc = pygame.transform.scale(load_image("donnie.png"), (170, 170))
+    screen.blit(dtc, (90, 423))
+    dtc_btn = Button('Donnie', 120, 620, button_group, little=2, light=False)
+
+    sd = pygame.transform.scale(load_image("sand.png"), (170, 170))
+    screen.blit(sd, (340, 423))
+    mrsd_btn = Button('Sandman', 370, 620, button_group, little=2, light=False)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if buy_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    buy_character()      #ВЫБОР ПЕРСОНАЖА!
+                if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    terminate()
+                if menu_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    start_screen()
+                    return
+                if bnzd_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    show_character("Dr Benzedrine", 0, 1)
+                if hsc_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    show_character("HorseShoe Crab", 160, 2)
+                if dtc_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    show_character("Donnie The Catcher", 350, 3)
+                if mrsd_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    show_character("Mr Sandman", 666, 4)
+
+            if event.type == pygame.USEREVENT:
+                for btn in button_group:
+                    if btn.rect.collidepoint(pygame.mouse.get_pos()):
+                        btn.timer += 1
+                        btn.timer2 = 0
+                    else:
+                        btn.timer = 0
+                        btn.timer2 += 1
+                        btn.highlight()
+        for btn in button_group:
+            if btn.rect.collidepoint(pygame.mouse.get_pos()):
+                btn.highlight()
+        button_group.update()
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def show_character(name, price, num):
+    global choosen_character, choosen_price
+    choosen_character = num
+    choosen_price = price
+    character_card = pygame.transform.scale(load_image("card.png"), (850, 550))
+    screen.blit(character_card, (340, 130))
+
+    name_font = pygame.font.Font('data/pixel3.ttf', 30)
+    text_font = pygame.font.Font('data/pixel3.ttf', 19)
+
+    zast = pygame.transform.scale(load_image(f"{name}_full.png"), (210, 210))
+    screen.blit(zast, (620, 180))
+
+    title = name_font.render(f'{name}', 1, (255, 255, 255))
+    title_rect = title.get_rect(left=590, top=400)
+    screen.blit(title, title_rect)
+
+    if num == 1:
+        description = ["Dr. Benzedrine - your default",
+                       "character, who has a power of",
+                       "exploding bullets (he made it",
+                       "himself in laboratory!)",
+                       "___________________________",
+                       f"Price: {str(price)}$"
+                       ]
+    elif num == 2:
+        description = ["HorseShoe Crab - the luckiest",
+                       "man ever! You can use it",
+                       "in fighting and collect",
+                       "more coins from enemies!",
+                       "___________________________",
+                       f"Price: {str(price)}$"
+                       ]
+    elif num == 3:
+        description = ["Donnie The Catcher - can help",
+                       "you to catch an attention!",
+                       "Or not... Be invisible for",
+                       "enemies one time!",
+                       "___________________________",
+                       f"Price: {str(price)}$"
+                       ]
+    else:
+        description = ["Mr Sandman - The Suiteheart",
+                       "of dreams. Can recreate the",
+                       "most powerful things ever! Use",
+                       "SuperBeam to defeat everybody!",
+                       "___________________________",
+                       f"Price: {str(price)}$"
+                       ]
+    y_move = 450
+    for i in description:
+        desc = text_font.render(i, 1, (255, 255, 255))
+        desc_rect = desc.get_rect(left=590, top=y_move)
+        screen.blit(desc, desc_rect)
+        y_move += 30
+
+def buy_character():
+    global choosen_character, choosen_character_to_play, choosen_price
+    text_font = pygame.font.Font('data/pixel3.ttf', 19)
+    if player_coins >= choosen_price or choosen_character == 1:
+        choosen_character_to_play = choosen_character
+        desc = text_font.render("Successful!", 1, (255, 255, 255))
+        desc_rect = desc.get_rect(left=700, top=620)
+        screen.blit(desc, desc_rect)
+    else:
+        desc = text_font.render("You need more coins!", 1, (255, 255, 255))
+        desc_rect = desc.get_rect(left=700, top=620)
+        screen.blit(desc, desc_rect)
 
 def end_screen():
     global start
@@ -191,13 +350,13 @@ def end_screen():
 
     button_group = pygame.sprite.Group()
     if player.win:
-        restart_btn = Button('next', 250, 500, button_group)
-        menu_btn = Button('menu', 440, 500, button_group)
-        quit_btn = Button('quit', 650, 500, button_group)
+        restart_btn = Button('Next', 250, 500, button_group)
+        menu_btn = Button('Menu', 440, 500, button_group)
+        quit_btn = Button('Quit', 650, 500, button_group)
     else:
-        restart_btn = Button('restart', 220, 500, button_group)
-        menu_btn = Button('menu', 490, 500, button_group)
-        quit_btn = Button('quit', 670, 500, button_group)
+        restart_btn = Button('Restart', 220, 500, button_group)
+        menu_btn = Button('Menu', 490, 500, button_group)
+        quit_btn = Button('Quit', 670, 500, button_group)
     pygame.time.set_timer(pygame.USEREVENT, 50)
 
     while True:
@@ -263,9 +422,16 @@ def cut_sheet(obj, sheet, columns, rows):
 
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, text, pos_x, pos_y, group):
+    def __init__(self, text, pos_x, pos_y, group, little=0, light=True):
         super().__init__(group)
-        self.font = pygame.font.Font('data/pixel3.ttf', 60)
+        self.light = light
+        if little:
+            if little == 1:
+                self.font = pygame.font.Font('data/pixel3.ttf', 50)
+            else:
+                self.font = pygame.font.Font('data/pixel3.ttf', 30)
+        else:
+            self.font = pygame.font.Font('data/pixel3.ttf', 60)
         self.text = self.font.render(text, 1, (255, 255, 255))
         self.rect = self.text.get_rect(top=pos_y, left=pos_x)
         self.timer = 0
@@ -275,15 +441,16 @@ class Button(pygame.sprite.Sprite):
         screen.blit(self.text, self.rect)
 
     def highlight(self):
-        for i in range(self.rect.width // 10):
-            if i < self.timer:
-                pygame.draw.rect(screen, (255, 255, 255),
-                                 (int(self.rect.left + i * 10), int(self.rect.bottom + 5), 9, 9))
-        if self.timer == 0:
-            for i in range(self.rect.width // 10 + 1):
-                if i <= self.timer2:
-                    pygame.draw.rect(screen, (152, 94, 63) if not start else (37, 0, 0),
-                                     (int(self.rect.right - (i + 1) * 10), int(self.rect.bottom + 5), 10, 9))
+        if self.light:
+            for i in range(self.rect.width // 10):
+                if i < self.timer:
+                    pygame.draw.rect(screen, (255, 255, 255),
+                                     (int(self.rect.left + i * 10), int(self.rect.bottom + 5), 9, 9))
+            if self.timer == 0:
+                for i in range(self.rect.width // 10 + 1):
+                    if i <= self.timer2:
+                        pygame.draw.rect(screen, (152, 94, 63) if not start else (37, 0, 0),
+                                         (int(self.rect.right - (i + 1) * 10), int(self.rect.bottom + 5), 10, 9))
 
 
 class Decorative(pygame.sprite.Sprite):
@@ -410,6 +577,7 @@ class Enemy_2(Enemy):
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
+        global choosen_character_to_play
         super().__init__(player_group, all_sprites)
         self.speedx = 0
         self.speedy = 0
@@ -426,7 +594,16 @@ class Player(pygame.sprite.Sprite):
         self.win = False
 
         self.frames = []
-        cut_sheet(self, load_image('hero1.png'), 3, 1)
+
+        if choosen_character_to_play == 1:
+            cut_sheet(self, load_image('hero1.png'), 3, 1)
+        elif choosen_character_to_play == 2:
+            cut_sheet(self, load_image('hero2.png'), 3, 1)
+        elif choosen_character_to_play == 3:
+            cut_sheet(self, load_image('hero3.png'), 3, 1)
+        elif choosen_character_to_play == 4:
+            cut_sheet(self, load_image('hero4.png'), 3, 1)
+
         self.cur_frame = 1
         self.image = self.frames[self.cur_frame]
         self.image = pygame.transform.scale(self.image, (97, 130))
@@ -464,7 +641,9 @@ class Player(pygame.sprite.Sprite):
             self.change_frame()
 
     def update(self):
+        global player_coins
         self.get_coins()
+        player_coins = self.coins
         # проверяем падает ли наш персонаж
         if not self.on_the_ground() and not self.collision_at_the_top():
             self.speedy += 0.4
@@ -611,10 +790,14 @@ class Bullet(pygame.sprite.Sprite):
         cut_sheet(self, self.boom_image, 7, 1)
 
     def update(self):
+        global choosen_character_to_play
         for sprite in pygame.sprite.spritecollide(self, enemy_group, True):
             self.abs_pos = sprite.abs_pos
             self.collision = True
-            player.coins += 10
+            if choosen_character_to_play == 2:             # Если персонаж HShoeCrab - монет выпадает вдвое больше!!!
+                player.coins += random.randint(16, 30)
+            else:
+                player.coins += random.randint(8, 15)
             self.speedx = 0
         if self.collision:
             self.boom()
