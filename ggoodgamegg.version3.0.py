@@ -244,6 +244,32 @@ class Player(pygame.sprite.Sprite):
             self.coins += 1
 
 
+class Enemy():
+    def __init__(self, pos_x, pos_y):
+        super().__init__(enemy_group, all_sprites)
+
+        self.frames = []
+        self.cut_sheet(load_image('enemy1.png'), 3, 1)
+        self.cur_frame = 1
+        self.image = self.frames[self.cur_frame]
+        self.image = pygame.transform.scale(self.image, (97, 130))
+        self.player_image = self.image  # копия картинки персонажа, нужна для того чтобы по ней переворачивать картинку персонажа при ходьбе
+        self.rect = pygame.Rect(0, 0, self.image.get_width() - 20, self.image.get_height())
+
+        self.rect.left = pos_x * tile_width
+        self.rect.centery = pos_y * tile_height
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+
+
 if __name__ == '__main__':
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
