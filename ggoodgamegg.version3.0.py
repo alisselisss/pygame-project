@@ -484,8 +484,12 @@ def end_screen():
         motivation = pixel_font2.render('Now you can feel your heartbeat', 1, (255, 255, 255))
         motivation2 = pixel_font2.render('beating in unison with', 1, (255, 255, 255))
         motivation3 = pixel_font2.render('your power. It becomes stronger...', 1, (255, 255, 255))
-        ramka = pygame.transform.scale(load_image("ramka.png"), (150, 110))
-        screen.blit(ramka, (290, 350))
+        if choosen_character_to_play == 1:
+            ramka = pygame.transform.scale(load_image("ramka.png"), (160, 110))
+            screen.blit(ramka, (290, 350))
+        else:
+            ramka = pygame.transform.scale(load_image("ramka.png"), (260, 110))
+            screen.blit(ramka, (290, 350))
         result_coin = pygame.transform.scale(tile_images['coin'], (40, 40))
         screen.blit(result_coin, (300, 360))
         result_coins = pixel_font2.render('= ' + str(player.coins), 1, (255, 255, 255))
@@ -687,6 +691,9 @@ class Tile(pygame.sprite.Sprite):
             tile_width * pos_x, tile_height * pos_y)
         self.abs_pos = (self.rect.x, self.rect.y)
 
+        if tile_type == 'end_table' or tile_type == 'start_table':
+            self.image = pygame.transform.scale(tile_images[tile_type], (100, 100))
+
 
 class Camera:
     def __init__(self):
@@ -697,6 +704,7 @@ class Camera:
         # изменяем положение обьектов, в соотвествии с камерой
         obj.rect.x = obj.abs_pos[0] + self.dx
         obj.rect.y = obj.abs_pos[1] + self.dy
+
 
     def update(self, target):
         self.dx = 0
@@ -759,7 +767,18 @@ class Player(pygame.sprite.Sprite):
         self.start_camera_dy = 0
 
         self.coins = 0
-        self.lives = 3
+        if choosen_character_to_play == 1:
+            self.lives = 3
+            self.transparent_mod = None
+        elif choosen_character_to_play == 2:
+            self.lives = 4
+            self.transparent_mod = None
+        elif choosen_character_to_play == 3:
+            self.transparent_mod = False   # мод невидимости для Донни
+            self.lives = 5
+        elif choosen_character_to_play == 4:
+            self.lives = 6
+            self.transparent_mod = None
         self.timer = 0
 
         self.damage = False
@@ -787,6 +806,18 @@ class Player(pygame.sprite.Sprite):
 
         self.rect.left = pos_x * tile_width
         self.rect.centery = pos_y * tile_height
+
+    def transparency(self):
+        self.transparent_mod = True
+        cut_sheet(self, load_image('transparent_hero3.png'), 3, 1)
+        self.cur_frame = 1
+        self.image = self.frames[self.cur_frame]
+        self.image = pygame.transform.scale(self.image, (97, 130))
+        self.player_image = self.image  # копия картинки персонажа, нужна для того чтобы по ней переворачивать картинку персонажа при ходьбе
+        self.rect = pygame.Rect(0, 0, self.image.get_width() - 20, self.image.get_height())
+        self.rect.left = self.rect.x * tile_width
+        self.rect.centery = self.rect.y * tile_height
+
 
     def get_keys(self):
         # проверяем какие клавиши нажаты, задаем скорость ходьбы
@@ -863,12 +894,15 @@ class Player(pygame.sprite.Sprite):
         if self.timer == 1:
             self.damage = False
         for sprite in pygame.sprite.spritecollide(self, enemy_group, False):
-            if not self.damage:
-                self.lives -= 1
-                self.damage = True
-                self.timer = 0
-                pygame.time.set_timer(pygame.USEREVENT, 1500)
-                draw_hearts(self.lives)
+            if self.transparent_mod:
+                self.transparent_mod = False
+            else:
+                if not self.damage:
+                    self.lives -= 1
+                    self.damage = True
+                    self.timer = 0
+                    pygame.time.set_timer(pygame.USEREVENT, 1500)
+                    draw_hearts(self.lives)
         if self.lives == 0:
             self.end_of_level()
         if pygame.sprite.spritecollide(self, end_group, False):
@@ -876,17 +910,21 @@ class Player(pygame.sprite.Sprite):
             self.end_of_level()
 
     def drop(self):
-        for x in range(self.image.get_width()):
-            for y in range(self.image.get_height()):
-                r = self.image.get_at((x, y))[0]
-                r = r + 50 if r < 205 else 255
-                g = self.image.get_at((x, y))[1]
-                g -= 50 if g > 50 else 0
-                b = self.image.get_at((x, y))[2]
-                b -= 50 if b > 50 else 0
-                a = self.image.get_at((x, y))[3]
-                self.image.set_at((x, y), pygame.Color(r, g, b, a))
-                self.player_image = self.image
+        if self.transparent_mod:
+            pass
+        else:
+            for x in range(self.image.get_width()):
+                for y in range(self.image.get_height()):
+                    r = self.image.get_at((x, y))[0]
+                    r = r + 50 if r < 205 else 255
+                    g = self.image.get_at((x, y))[1]
+                    g -= 50 if g > 50 else 0
+                    b = self.image.get_at((x, y))[2]
+                    b -= 50 if b > 50 else 0
+                    a = self.image.get_at((x, y))[3]
+                    self.image.set_at((x, y), pygame.Color(r, g, b, a))
+                    self.player_image = self.image
+
 
     def change_frame(self):
         # анимация ходьбы
@@ -911,7 +949,7 @@ class Player(pygame.sprite.Sprite):
     def collision_at_the_top(self):
         # столкновение с блоками сверху
         for sprite in pygame.sprite.spritecollide(self, surface_group, False):
-            if sprite.rect.top <= self.rect.top:
+            if sprite.rect.top <= self.rect.top and abs(self.rect.centerx - sprite.rect.centerx) < 50:
                 self.rect.top = sprite.rect.bottom + 1
                 if self.jump:
                     self.bad_moment = True
@@ -948,13 +986,18 @@ class Player(pygame.sprite.Sprite):
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
-        super().__init__(bullet_group, all_sprites)
-        self.image = load_image('fire.png').convert_alpha()
+        global choosen_character_to_play
+        super().__init__(all_sprites)
+        self.image = load_image(f'fire{choosen_character_to_play}.png').convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.bottom = pos_y
         self.rect.centerx = pos_x
+
+        self.starting_pos = pos_x
         self.speedx = 13 if not player.left else -13
+
         self.abs_pos = [self.rect.x, self.rect.y]
+
         self.collision = False
         self.cur_frame = 0
         self.boom_image = load_image('boom.png')
@@ -975,6 +1018,8 @@ class Bullet(pygame.sprite.Sprite):
             self.boom()
         else:
             self.abs_pos[0] += self.speedx
+            if abs(self.abs_pos[0] - self.starting_pos) == 500:
+                self.kill()
 
     def boom(self):
         self.cur_frame = self.cur_frame + 0.22
@@ -1005,8 +1050,7 @@ if __name__ == '__main__':
         'end_table': load_image('table.png'),
         'dec_heart': load_image('dec_1.png'),
         'dec_dragonfly': load_image('dec_2.png'),
-        'dec_fly': load_image('fly.png'),
-        'bullet': load_image('fire.png')
+        'dec_fly': load_image('fly.png')
     }
     heart_image = load_image('heart.png')
 
@@ -1042,6 +1086,8 @@ if __name__ == '__main__':
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:  # здесь выстрел по нажатию пробела
                     player.shoot()
+                if event.key == pygame.K_z and choosen_character_to_play == 3:  # здесь если персонаж Donnie - делаем его невидимым
+                    player.transparency()
 
         player.get_keys()
         coins = pixel_font.render(str(player.coins), 1, (255, 255, 255))
