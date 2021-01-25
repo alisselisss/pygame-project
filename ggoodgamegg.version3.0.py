@@ -83,7 +83,7 @@ def draw_hearts(lives):
 
 def terminate():
     pygame.quit()
-    # write_progress()
+    write_progress()
     sys.exit()
 
 
@@ -567,7 +567,7 @@ def end_screen():
 
 
 def restart():
-    global player, camera, background, background_rect, start, level_map
+    global player, camera, background, background_rect, start, level_map, tile_images
     start = False
     for sprite in all_sprites:
         all_sprites.remove(sprite)
@@ -583,12 +583,12 @@ def restart():
         player.kill()
     except Exception:
         pass
-    level_map = load_level(eval(f'level_{choosen_level}_dict["level_map"]'))
-    player = generate_level(level_map)
     background = load_image(eval(f'level_{choosen_level}_dict["back"]'))
     background_rect = background.get_rect()
     tile_images['surface'] = load_image(eval(f'level_{choosen_level}_dict["surface"]'))
     tile_images['beautiful_surface'] = load_image(eval(f'level_{choosen_level}_dict["beautiful_surface"]'))
+    level_map = load_level(eval(f'level_{choosen_level}_dict["level_map"]'))
+    player = generate_level(level_map)
 
     draw_hearts(player.lives)
     camera = Camera()
@@ -597,6 +597,7 @@ def restart():
 
 
 def cut_sheet(obj, sheet, columns, rows):
+    obj.frames = []
     obj.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
                            sheet.get_height() // rows)
     for j in range(rows):
@@ -766,6 +767,8 @@ class Player(pygame.sprite.Sprite):
         self.speedy = 0
         self.start_camera_dy = 0
 
+        self.become_trans = False
+
         self.coins = 0
         if choosen_character_to_play == 1:
             self.lives = 3
@@ -808,15 +811,28 @@ class Player(pygame.sprite.Sprite):
         self.rect.centery = pos_y * tile_height
 
     def transparency(self):
+        self.become_trans = True
+        x, y = self.rect.x, self.rect.y
         self.transparent_mod = True
+
         cut_sheet(self, load_image('transparent_hero3.png'), 3, 1)
         self.cur_frame = 1
         self.image = self.frames[self.cur_frame]
         self.image = pygame.transform.scale(self.image, (97, 130))
-        self.player_image = self.image  # копия картинки персонажа, нужна для того чтобы по ней переворачивать картинку персонажа при ходьбе
-        self.rect = pygame.Rect(0, 0, self.image.get_width() - 20, self.image.get_height())
-        self.rect.left = self.rect.x * tile_width
-        self.rect.centery = self.rect.y * tile_height
+        self.player_image = self.image  # копия картинки персонажа, нужна для того чтобы по ней переворачивать картинку персонажа при ходьбеs
+
+        self.rect = pygame.Rect(x, y, self.image.get_width() - 20, self.image.get_height())
+
+    def untransparency(self):
+        x, y = self.rect.x, self.rect.y
+
+        cut_sheet(self, load_image('hero3.png'), 3, 1)
+        self.cur_frame = 1
+        self.image = self.frames[self.cur_frame]
+        self.image = pygame.transform.scale(self.image, (97, 130))
+        self.player_image = self.image  # копия картинки персонажа, нужна для того чтобы по ней переворачивать картинку персонажа при ходьбеs
+
+        self.rect = pygame.Rect(x, y, self.image.get_width() - 20, self.image.get_height())
 
 
     def get_keys(self):
@@ -892,10 +908,14 @@ class Player(pygame.sprite.Sprite):
                 camera.apply(sprite)
         # проверяем столкновение с врагом
         if self.timer == 1:
+            self.timer = 0
+            self.transparent_mod = False
             self.damage = False
         for sprite in pygame.sprite.spritecollide(self, enemy_group, False):
             if self.transparent_mod:
-                self.transparent_mod = False
+                self.timer = 0
+                pygame.time.set_timer(pygame.USEREVENT, 2000)
+                self.untransparency()
             else:
                 if not self.damage:
                     self.lives -= 1
@@ -910,20 +930,17 @@ class Player(pygame.sprite.Sprite):
             self.end_of_level()
 
     def drop(self):
-        if self.transparent_mod:
-            pass
-        else:
-            for x in range(self.image.get_width()):
-                for y in range(self.image.get_height()):
-                    r = self.image.get_at((x, y))[0]
-                    r = r + 50 if r < 205 else 255
-                    g = self.image.get_at((x, y))[1]
-                    g -= 50 if g > 50 else 0
-                    b = self.image.get_at((x, y))[2]
-                    b -= 50 if b > 50 else 0
-                    a = self.image.get_at((x, y))[3]
-                    self.image.set_at((x, y), pygame.Color(r, g, b, a))
-                    self.player_image = self.image
+        for x in range(self.image.get_width()):
+            for y in range(self.image.get_height()):
+                r = self.image.get_at((x, y))[0]
+                r = r + 50 if r < 205 else 255
+                g = self.image.get_at((x, y))[1]
+                g -= 50 if g > 50 else 0
+                b = self.image.get_at((x, y))[2]
+                b -= 50 if b > 50 else 0
+                a = self.image.get_at((x, y))[3]
+                self.image.set_at((x, y), pygame.Color(r, g, b, a))
+                self.player_image = self.image
 
 
     def change_frame(self):
@@ -932,7 +949,7 @@ class Player(pygame.sprite.Sprite):
         self.player_image = self.frames[round(self.cur_frame) % len(self.frames)]
         self.player_image = pygame.transform.scale(self.player_image, (97, 130))
         self.image = pygame.transform.flip(self.player_image, self.left, False)
-        if self.damage:
+        if self.damage and (not self.transparent_mod or self.transparent_mod is None):
             self.drop()
 
     def on_the_ground(self):
@@ -981,6 +998,11 @@ class Player(pygame.sprite.Sprite):
         end_screen()
 
     def shoot(self):
+        Bullet(self.rect.centerx - camera.dx, self.rect.centery - camera.dy)
+
+    def super_beam(self):
+        Bullet(self.rect.centerx - camera.dx, self.rect.centery - camera.dy)
+        Bullet(self.rect.centerx - camera.dx, self.rect.centery - camera.dy)
         Bullet(self.rect.centerx - camera.dx, self.rect.centery - camera.dy)
 
 
@@ -1079,7 +1101,7 @@ if __name__ == '__main__':
                 write_progress()
                 running = False
             if event.type == pygame.USEREVENT:
-                if player.damage:
+                if player.damage or (player.transparent_mod or player.transparent_mod is None):
                     player.timer += 1
                 else:
                     pygame.time.set_timer(pygame.USEREVENT, 0)
@@ -1087,7 +1109,11 @@ if __name__ == '__main__':
                 if event.key == pygame.K_SPACE:  # здесь выстрел по нажатию пробела
                     player.shoot()
                 if event.key == pygame.K_z and choosen_character_to_play == 3:  # здесь если персонаж Donnie - делаем его невидимым
-                    player.transparency()
+                    if not player.become_trans:
+                        player.transparency()
+                if event.key == pygame.K_z and choosen_character_to_play == 4:  # здесь если персонаж 4 - делаем его невидимым
+                    player.super_beam()
+
 
         player.get_keys()
         coins = pixel_font.render(str(player.coins), 1, (255, 255, 255))

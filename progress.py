@@ -3,8 +3,8 @@ level_1_dict = {'level_map': 'map_1.map',
                 'beautiful_surface': 'grass.png',
                 'back': 'back123.jpg'}
 level_2_dict = {'level_map': 'map_2.map',
-                'surface': 'ground.jpg',
-                'beautiful_surface': 'grass.png',
+                'surface': 'ground_lab.jpg',
+                'beautiful_surface': 'grass_lab.png',
                 'back': 'back121.jpg'}
 level_3_dict = {'level_map': 'map_3.map',
                 'surface': 'ground.jpg',
