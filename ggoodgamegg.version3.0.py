@@ -13,6 +13,24 @@ player_coins = 0  # Сколько монет у игрока, по сути в�
 choosen_price = 0  # Цена предположительно-выбираемого персонажа, нужна для сравнения кол-ва денег и покупки
 choosen_character = 1  # условно выбранный персонаж!
 choosen_character_to_play = 1  # номер выбранного персонажа, 1 - дефолтный
+choosen_level = 0
+
+level_1_dict = {'level_map': 'map_1.map',
+                'surface': 'ground.jpg',
+                'beautiful_surface': 'grass.png',
+                'back': 'back123.jpg'}
+level_2_dict = level_3_dict = level_4_dict = level_5_dict = level_6_dict = level_7_dict = level_8_dict = level_9_dict = level_10_dict = level_1_dict.copy()
+level_2_dict['level_map'] = 'map_2.map'
+level_3_dict['level_map'] = 'map_3.map'
+level_4_dict['level_map'] = 'map_4.map'
+level_5_dict['level_map'] = 'map_5.map'
+level_6_dict['level_map'] = 'map_6.map'
+level_7_dict['level_map'] = 'map_7.map'
+level_8_dict['level_map'] = 'map_8.map'
+level_9_dict['level_map'] = 'map_9.map'
+level_10_dict['level_map'] = 'map_10.map'
+level_1_dict['level_map'] = 'map_1.map'
+
 
 def load_image(name, colorkey=None):
     # загружаем изображения
@@ -83,6 +101,7 @@ def terminate():
     pygame.quit()
     sys.exit()
 
+
 def render(intro_text, text_coord):
     for i in range(len(intro_text)):
         font = pygame.font.Font("data/pixel3.ttf", 180 - i * 100)
@@ -97,6 +116,7 @@ def render(intro_text, text_coord):
 
 def start_screen():
     global start
+    start = True
     intro_text = ["THE",
                   "SUITEHEARTS"]
 
@@ -126,35 +146,123 @@ def start_screen():
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if play_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    # start = False
-                    # for sprite in decorative_group:
-                    #     sprite.kill()
-                    return
+                    for sprite in decorative_group:
+                        sprite.kill()
+                    level_menu()
+                    if choosen_level:
+                        return
                 if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     terminate()
                 if shop_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     shop()  # GO TO THE SHOP!!!
             if event.type == pygame.USEREVENT:
                 for btn in button_group_start:
-                    if btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    if btn.rect.collidepoint(pygame.mouse.get_pos()) and btn.timer < btn.rect.x // 10:
                         btn.timer += 1
-                        btn.timer2 = 0
-                    else:
-                        btn.timer = 0
-                        btn.timer2 += 1
-                        btn.highlight()
+                    elif btn.timer > 0:
+                        btn.timer -= 1
         for btn in button_group_start:
-            if btn.rect.collidepoint(pygame.mouse.get_pos()):
-                btn.highlight()
+            btn.highlight()
         render(intro_text, 280)
         button_group_start.update()
         pygame.display.flip()
         clock.tick(FPS)
 
 
-def shop():
+def level_menu():
+    global start, choosen_level
+    start = False
     pixel_font = pygame.font.Font('data/pixel3.ttf', 100)
-    pixel_font2 = pygame.font.Font('data/pixel3.ttf', 30)
+    name_font = pygame.font.Font('data/pixel3.ttf', 30)
+    text_font = pygame.font.Font('data/pixel3.ttf', 19)
+
+    background_image = load_image("back.png")
+    map_image = load_image('level_map2.png')
+
+    button_group = pygame.sprite.Group()
+    run_btn = Button('Run', 210, 710, button_group, little=1)
+    menu_btn = Button('Menu', 410, 710, button_group, little=1)
+    quit_btn = Button('Quit', 610, 710, button_group, little=1)
+
+    level_1 = pygame.Rect(40, 485, 70, 100)
+    level_2 = pygame.Rect(135, 600, 70, 100)
+    level_3 = pygame.Rect(200, 490, 70, 100)
+    level_4 = pygame.Rect(285, 590, 70, 100)
+    level_5 = pygame.Rect(355, 480, 70, 100)
+    level_6 = pygame.Rect(440, 570, 70, 100)
+    level_7 = pygame.Rect(500, 485, 70, 100)
+    level_8 = pygame.Rect(570, 595, 70, 100)
+    level_9 = pygame.Rect(645, 505, 70, 100)
+    level_10 = pygame.Rect(750, 430, 100, 150)
+
+    '''hero = load_image(f'hero{choosen_character_to_play}.png')
+    frames = []
+    for i in range(3):
+        frames.append(hero.subsurface(pygame.Rect(
+            (hero.get_width() // 3 * i, 0),
+            (hero.get_width() // 3, hero.get_height()))))
+    cur_frame = 1
+    pos = (WIDTH // 2 - 10, HEIGHT // 2 - 10)
+    dx = dy = 0'''
+
+    while True:
+        screen.blit(background_image, [0, 0])
+        screen.blit(map_image, [40, 10])
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    terminate()
+                if menu_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    choosen_level = 0
+                    return
+                if run_btn.rect.collidepoint(pygame.mouse.get_pos()) and choosen_level:
+                    return
+            if event.type == pygame.USEREVENT:
+                for btn in button_group:
+                    if btn.rect.collidepoint(pygame.mouse.get_pos()) and btn.timer < btn.rect.x // 10:
+                        btn.timer += 1
+                    elif btn.timer > 0:
+                        btn.timer -= 1
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for i in range(1, 11):
+                    if eval(f"level_{i}.collidepoint(pygame.mouse.get_pos())"):
+                        choosen_level = i
+            '''if event.type == pygame.MOUSEBUTTONDOWN:
+                pos = (round(pos[0] + dx), round(pos[1] + dy))
+                dx = pos[0] - event.pos[0]
+                dy = pos[1] - event.pos[1]
+                pos = event.pos
+        image = frames[round(cur_frame) % len(frames)]
+        image = pygame.transform.scale(image, (80, 105))
+        if dx > 0:
+            dx -= 2
+            image = pygame.transform.flip(image, True, False)
+        if dx < 0:
+            dx += 2
+        if dy > 0:
+            dy -= 2
+        if dy < 0:
+            dy += 2
+        if abs(dx) >= 2 or abs(dy) >= 2:
+            cur_frame += 0.1
+        else:
+            cur_frame = 1
+        screen.blit(image, (round(pos[0] + dx), round(pos[1] + dy)))'''
+        for btn in button_group:
+            btn.highlight()
+        button_group.update()
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def shop():
+    global start
+    start = False
+    pixel_font = pygame.font.Font('data/pixel3.ttf', 100)
+    name_font = pygame.font.Font('data/pixel3.ttf', 30)
+    text_font = pygame.font.Font('data/pixel3.ttf', 19)
 
     background_image = load_image("back.png")
     screen.blit(background_image, [0, 0])
@@ -178,11 +286,16 @@ def shop():
     charater_card = pygame.transform.scale(load_image("card2.png"), (230, 230))
     screen.blit(charater_card, (320, 389))
 
-    button_group = pygame.sprite.Group()
+    hero_frames = None
+    name = None
+    result, result_rect = None, None
+    cur_frame = 1
+    image = None
 
-    buy_btn = Button('Buy', 210, 710, button_group, little=1)
-    menu_btn = Button('Menu', 410, 710, button_group, little=1)
-    quit_btn = Button('Quit', 610, 710, button_group, little=1)
+    button_group = pygame.sprite.Group()
+    buy_btn = Button('Buy', 210, 710, button_group, little=1, light=False)
+    menu_btn = Button('Menu', 410, 710, button_group, little=1, light=False)
+    quit_btn = Button('Quit', 610, 710, button_group, little=1, light=False)
 
     ben = pygame.transform.scale(load_image("benz.png"), (170, 170))
     screen.blit(ben, (90, 153))
@@ -206,33 +319,59 @@ def shop():
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if buy_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    buy_character()      #ВЫБОР ПЕРСОНАЖА!
+                    result, result_rect = buy_character()  # ВЫБОР ПЕРСОНАЖА!
                 if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     terminate()
                 if menu_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    start_screen()
+                    start = True
                     return
                 if bnzd_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    show_character("Dr Benzedrine", 0, 1)
+                    hero_frames, description = show_character("Dr Benzedrine", 0, 1)
+                    result, result_rect = None, None
+                    name = "Dr Benzedrine"
                 if hsc_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    show_character("HorseShoe Crab", 160, 2)
+                    hero_frames, description = show_character("HorseShoe Crab", 160, 2)
+                    result, result_rect = None, None
+                    name = "HorseShoe Crab"
                 if dtc_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    show_character("Donnie The Catcher", 350, 3)
+                    hero_frames, description = show_character("Donnie The Catcher", 350, 3)
+                    result, result_rect = None, None
+                    name = "Donnie The Catcher"
                 if mrsd_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    show_character("Mr Sandman", 666, 4)
+                    hero_frames, description = show_character("Mr Sandman", 666, 4)
+                    result, result_rect = None, None
+                    name = "Mr Sandman"
 
             if event.type == pygame.USEREVENT:
                 for btn in button_group:
-                    if btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    if btn.rect.collidepoint(pygame.mouse.get_pos()) and btn.timer < btn.rect.x // 10:
                         btn.timer += 1
-                        btn.timer2 = 0
-                    else:
-                        btn.timer = 0
-                        btn.timer2 += 1
-                        btn.highlight()
+                    elif btn.timer > 0:
+                        btn.timer -= 1
         for btn in button_group:
-            if btn.rect.collidepoint(pygame.mouse.get_pos()):
-                btn.highlight()
+            btn.highlight()
+        if not hero_frames is None:
+            screen.blit(character_card, (340, 130))
+            if not image is None and image.get_rect().move((650, 180)).collidepoint(pygame.mouse.get_pos()):
+                cur_frame += 0.1
+            else:
+                cur_frame = 1
+            image = hero_frames[round(cur_frame) % len(hero_frames)]
+            image = pygame.transform.scale(image, (160, 210))
+            screen.blit(image, (650, 180))
+
+            y_move = 450
+            for i in description:
+                desc = text_font.render(i, 1, (255, 255, 255))
+                desc_rect = desc.get_rect(left=590, top=y_move)
+                screen.blit(desc, desc_rect)
+                y_move += 30
+
+            title = name_font.render(name, 1, (255, 255, 255))
+            title_rect = title.get_rect(left=590, top=400)
+            screen.blit(title, title_rect)
+        if not result is None:
+            screen.blit(result, result_rect)
         button_group.update()
         pygame.display.flip()
         clock.tick(FPS)
@@ -242,18 +381,18 @@ def show_character(name, price, num):
     global choosen_character, choosen_price
     choosen_character = num
     choosen_price = price
-    character_card = pygame.transform.scale(load_image("card.png"), (850, 550))
-    screen.blit(character_card, (340, 130))
 
-    name_font = pygame.font.Font('data/pixel3.ttf', 30)
-    text_font = pygame.font.Font('data/pixel3.ttf', 19)
-
-    zast = pygame.transform.scale(load_image(f"{name}_full.png"), (210, 210))
-    screen.blit(zast, (620, 180))
-
-    title = name_font.render(f'{name}', 1, (255, 255, 255))
-    title_rect = title.get_rect(left=590, top=400)
-    screen.blit(title, title_rect)
+    characters = {'Dr Benzedrine': 'hero1.png',
+                  'HorseShoe Crab': 'hero2.png',
+                  'Donnie The Catcher': 'hero3.png',
+                  'Mr Sandman': 'hero4.png'
+                  }
+    zast = pygame.transform.scale(load_image(characters[name]), (210, 210))
+    frames = []
+    for i in range(3):
+        frames.append(zast.subsurface(pygame.Rect(
+            (zast.get_width() // 3 * i, 0),
+            (zast.get_width() // 3, zast.get_height()))))
 
     if num == 1:
         description = ["Dr. Benzedrine - your default",
@@ -287,12 +426,8 @@ def show_character(name, price, num):
                        "___________________________",
                        f"Price: {str(price)}$"
                        ]
-    y_move = 450
-    for i in description:
-        desc = text_font.render(i, 1, (255, 255, 255))
-        desc_rect = desc.get_rect(left=590, top=y_move)
-        screen.blit(desc, desc_rect)
-        y_move += 30
+    return frames, description
+
 
 def buy_character():
     global choosen_character, choosen_character_to_play, choosen_price
@@ -300,15 +435,15 @@ def buy_character():
     if player_coins >= choosen_price or choosen_character == 1:
         choosen_character_to_play = choosen_character
         desc = text_font.render("Successful!", 1, (255, 255, 255))
-        desc_rect = desc.get_rect(left=700, top=620)
-        screen.blit(desc, desc_rect)
     else:
         desc = text_font.render("You need more coins!", 1, (255, 255, 255))
-        desc_rect = desc.get_rect(left=700, top=620)
-        screen.blit(desc, desc_rect)
+    desc_rect = desc.get_rect(left=700, top=620)
+    screen.blit(desc, desc_rect)
+    return desc, desc_rect
+
 
 def end_screen():
-    global start
+    global start, choosen_level
     pixel_font = pygame.font.Font('data/pixel3.ttf', 65)
     pixel_font2 = pygame.font.Font('data/pixel3.ttf', 30)
     zast = pygame.transform.scale(load_image("zast.png"), (1000, 800))
@@ -365,6 +500,8 @@ def end_screen():
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if restart_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    if player.win:
+                        choosen_level += 1
                     restart()
                     return
                 if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
@@ -376,23 +513,19 @@ def end_screen():
                     return
             if event.type == pygame.USEREVENT:
                 for btn in button_group:
-                    if btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    if btn.rect.collidepoint(pygame.mouse.get_pos()) and btn.timer < btn.rect.x // 10:
                         btn.timer += 1
-                        btn.timer2 = 0
-                    else:
-                        btn.timer = 0
-                        btn.timer2 += 1
-                        btn.highlight()
+                    elif btn.timer > 0:
+                        btn.timer -= 1
         for btn in button_group:
-            if btn.rect.collidepoint(pygame.mouse.get_pos()):
-                btn.highlight()
+            btn.highlight()
         button_group.update()
         pygame.display.flip()
         clock.tick(FPS)
 
 
 def restart():
-    global player, camera
+    global player, camera, level_map, background, background_rect
     for sprite in all_sprites:
         all_sprites.remove(sprite)
     for sprite in enemy_group:
@@ -404,7 +537,13 @@ def restart():
     for sprite in coin_group:
         coin_group.remove(sprite)
     player.kill()
+    level_map = load_level(eval(f'level_{choosen_level}_dict["level_map"]'))
     player = generate_level(level_map)
+    background = load_image(eval(f'level_{choosen_level}_dict["back"]'))
+    background_rect = background.get_rect()
+    tile_images['surface'] = load_image(eval(f'level_{choosen_level}_dict["surface"]'))
+    tile_images['beautiful_surface'] = load_image(eval(f'level_{choosen_level}_dict["beautiful_surface"]'))
+
     draw_hearts(player.lives)
     camera = Camera()
     camera.update(player)
@@ -435,7 +574,6 @@ class Button(pygame.sprite.Sprite):
         self.text = self.font.render(text, 1, (255, 255, 255))
         self.rect = self.text.get_rect(top=pos_y, left=pos_x)
         self.timer = 0
-        self.timer2 = 0
 
     def update(self):
         screen.blit(self.text, self.rect)
@@ -446,11 +584,6 @@ class Button(pygame.sprite.Sprite):
                 if i < self.timer:
                     pygame.draw.rect(screen, (255, 255, 255),
                                      (int(self.rect.left + i * 10), int(self.rect.bottom + 5), 9, 9))
-            if self.timer == 0:
-                for i in range(self.rect.width // 10 + 1):
-                    if i <= self.timer2:
-                        pygame.draw.rect(screen, (152, 94, 63) if not start else (37, 0, 0),
-                                         (int(self.rect.right - (i + 1) * 10), int(self.rect.bottom + 5), 10, 9))
 
 
 class Decorative(pygame.sprite.Sprite):
@@ -794,7 +927,7 @@ class Bullet(pygame.sprite.Sprite):
         for sprite in pygame.sprite.spritecollide(self, enemy_group, True):
             self.abs_pos = sprite.abs_pos
             self.collision = True
-            if choosen_character_to_play == 2:             # Если персонаж HShoeCrab - монет выпадает вдвое больше!!!
+            if choosen_character_to_play == 2:  # Если персонаж HShoeCrab - монет выпадает вдвое больше!!!
                 player.coins += random.randint(16, 30)
             else:
                 player.coins += random.randint(8, 15)
@@ -819,7 +952,6 @@ if __name__ == '__main__':
     pygame.display.set_caption('TheSTHR')
     clock = pygame.time.Clock()
     pygame.time.set_timer(pygame.USEREVENT, 1500)
-    start = True
 
     tile_width = tile_height = 50
     tile_images = {
@@ -847,15 +979,16 @@ if __name__ == '__main__':
     end_group = pygame.sprite.Group()
     bullet_group = pygame.sprite.Group()
 
+    start = True
     start_screen()
 
     # загружаем уровень
-    level_map = load_level('map.map')
+    level_map = load_level(eval(f'level_{choosen_level}_dict["level_map"]'))
     player = generate_level(level_map)
-
-    background = pygame.image.load("data/back123.jpg").convert_alpha()
+    background = load_image(eval(f'level_{choosen_level}_dict["back"]'))
     background_rect = background.get_rect()
-    screen.blit(background, background_rect)
+    tile_images['surface'] = load_image(eval(f'level_{choosen_level}_dict["surface"]'))
+    tile_images['beautiful_surface'] = load_image(eval(f'level_{choosen_level}_dict["beautiful_surface"]'))
 
     camera = Camera()
     camera.update(player)
