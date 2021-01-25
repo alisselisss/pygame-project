@@ -15,7 +15,7 @@ choosen_character_to_play = 1  # номер выбранного персона�
 choosen_level = 1
 
 
-def load_image(name, colorkey=None):
+def load_image(name):
     # загружаем изображения
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
@@ -90,7 +90,9 @@ def generate_level(level):
     return new_player
 
 
-def draw_hearts(lives):
+# Отрисовка сердец, надписей, монет и ключей, обрезание картинок для анимаций
+
+def draw_hearts(lives):  # рисуем сердечки
     global hearts_group
     hearts_group = pygame.sprite.Group()
     for i in range(lives):
@@ -102,7 +104,7 @@ def draw_hearts(lives):
         heart.add(hearts_group)
 
 
-def draw_keys(keys):
+def draw_keys(keys):  # рисуем ключи на 10-м уровне
     global my_keys_group
     for i in range(keys):
         key = pygame.sprite.Sprite()
@@ -114,13 +116,7 @@ def draw_keys(keys):
         key.add(my_keys_group)
 
 
-def terminate():
-    pygame.quit()
-    write_progress()
-    sys.exit()
-
-
-def render(intro_text, text_coord):
+def render(intro_text, text_coord):  # рендеринг текста
     for i in range(len(intro_text)):
         font = pygame.font.Font("data/pixel3.ttf", 180 - i * 100)
         string_rendered = font.render(intro_text[i], 1, pygame.Color('white'))
@@ -132,7 +128,28 @@ def render(intro_text, text_coord):
         screen.blit(string_rendered, intro_rect)
 
 
-def start_screen():
+def my_money():  # отображение монет
+    ramka = pygame.transform.scale(load_image("card.png"), (800, 40))
+    screen.blit(ramka, (-300, 10))
+    screen.blit(pygame.transform.scale(tile_images['coin'], (40, 40)), (0, 10))
+    text_font = pygame.font.Font('data/pixel3.ttf', 35)
+    desc = text_font.render('= ' + str(progress_dict['player_coins']), 1, (255, 255, 255))
+    desc_rect = desc.get_rect(left=50, top=20)
+    screen.blit(desc, desc_rect)
+
+
+def cut_sheet(obj, sheet, columns, rows):  # разрезание картинок спрайта
+    obj.frames = []
+    obj.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                           sheet.get_height() // rows)
+    for j in range(rows):
+        for i in range(columns):
+            frame_location = (obj.rect.w * i, obj.rect.h * j)
+            obj.frames.append(sheet.subsurface(pygame.Rect(
+                frame_location, obj.rect.size)))
+
+
+def start_screen():  # начальный экран
     global start
     start = True
     intro_text = ["THE",
@@ -153,7 +170,7 @@ def start_screen():
     shop_btn = Button('Shop', 230, 550, button_group_start)
     quit_btn = Button('Quit', 630, 550, button_group_start)
 
-    pygame.time.set_timer(pygame.USEREVENT, 50)
+    # pygame.time.set_timer(pygame.USEREVENT, 50)
     while True:
         screen.blit(background_image, [0, 0])
         decorative_group.draw(screen)
@@ -192,17 +209,7 @@ def start_screen():
         clock.tick(FPS)
 
 
-def my_money():
-    ramka = pygame.transform.scale(load_image("card.png"), (800, 40))
-    screen.blit(ramka, (-300, 10))
-    screen.blit(pygame.transform.scale(tile_images['coin'], (40, 40)), (0, 10))
-    text_font = pygame.font.Font('data/pixel3.ttf', 35)
-    desc = text_font.render('= ' + str(progress_dict['player_coins']), 1, (255, 255, 255))
-    desc_rect = desc.get_rect(left=50, top=20)
-    screen.blit(desc, desc_rect)
-
-
-def level_menu():
+def level_menu():  # карта уровней
     global start, choosen_level
     start = False
 
@@ -213,6 +220,9 @@ def level_menu():
     run_btn = Button('Run', 210, 710, button_group, little=1)
     menu_btn = Button('Menu', 410, 710, button_group, little=1)
     quit_btn = Button('Quit', 610, 710, button_group, little=1)
+
+    if not choosen_level:
+        choosen_level = 1
 
     level_1_rect = pygame.Rect(70, 485, 70, 100)
     level_2_rect = pygame.Rect(130, 600, 70, 100)
@@ -304,7 +314,7 @@ def level_menu():
         clock.tick(FPS)
 
 
-def shop():
+def shop():  # окно магазина
     global start
     start = False
     pixel_font = pygame.font.Font('data/pixel3.ttf', 100)
@@ -447,7 +457,7 @@ def shop():
         clock.tick(FPS)
 
 
-def show_character(name, price, num):
+def show_character(name, price, num):  # показывать анимацию персонажа в магазине + информация о нём
     global choosen_character, choosen_price
     choosen_character = num
     choosen_price = price
@@ -499,7 +509,7 @@ def show_character(name, price, num):
     return frames, description
 
 
-def buy_character():
+def buy_character():  # кнопка совершения покупки в магазине
     global choosen_character, choosen_character_to_play, choosen_price
     text_font = pygame.font.Font('data/pixel3.ttf', 19)
     if progress_dict['player_coins'] >= choosen_price and not \
@@ -518,7 +528,7 @@ def buy_character():
     return desc, desc_rect
 
 
-def end_screen():
+def end_screen():  # конечный экран (победа или поражение, определяется по player.win)
     global start, choosen_level, progress_dict
     pixel_font = pygame.font.Font('data/pixel3.ttf', 65)
     pixel_font2 = pygame.font.Font('data/pixel3.ttf', 30)
@@ -589,7 +599,7 @@ def end_screen():
         restart_btn = Button('Restart', 220, 500, button_group)
         menu_btn = Button('Menu', 490, 500, button_group)
         quit_btn = Button('Quit', 670, 500, button_group)
-    pygame.time.set_timer(pygame.USEREVENT, 50)
+    # pygame.time.set_timer(pygame.USEREVENT, 50)
 
     while True:
         for event in pygame.event.get():
@@ -623,7 +633,7 @@ def end_screen():
         clock.tick(FPS)
 
 
-def restart():
+def restart():  # сброс уровня, рестарт
     global player, camera, background, background_rect, start, level_map, tile_images, my_keys_group
     start = False
     for sprite in all_sprites:
@@ -636,6 +646,8 @@ def restart():
         surface_group.remove(sprite)
     for sprite in coin_group:
         coin_group.remove(sprite)
+    for sprite in key_group:
+        key_group.remove(sprite)
     for sprite in thorns_group:
         thorns_group.remove(sprite)
     for sprite in end_group:
@@ -652,25 +664,19 @@ def restart():
         level_map = load_level(eval(f'level_{choosen_level}_dict["level_map"]'))
         player = generate_level(level_map)
         my_keys_group = pygame.sprite.Group()
-
         draw_hearts(player.lives)
         camera = Camera()
         camera.update(player)
         pygame.time.set_timer(pygame.USEREVENT, 1500)
 
 
-def cut_sheet(obj, sheet, columns, rows):
-    obj.frames = []
-    obj.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                           sheet.get_height() // rows)
-    for j in range(rows):
-        for i in range(columns):
-            frame_location = (obj.rect.w * i, obj.rect.h * j)
-            obj.frames.append(sheet.subsurface(pygame.Rect(
-                frame_location, obj.rect.size)))
+def terminate():  # выход из пайгейма и питона в целом
+    pygame.quit()
+    write_progress()
+    sys.exit()
 
 
-class Button(pygame.sprite.Sprite):
+class Button(pygame.sprite.Sprite):  # класс кнопок
     def __init__(self, text, pos_x, pos_y, group, little=0, light=True):
         super().__init__(group)
         self.light = light
@@ -696,7 +702,7 @@ class Button(pygame.sprite.Sprite):
                                      (int(self.rect.left + i * 10), int(self.rect.bottom + 5), 9, 9))
 
 
-class Decorative(pygame.sprite.Sprite):
+class Decorative(pygame.sprite.Sprite):  # класс декоративных украшений
     def __init__(self, pos_x, pos_y, img):
         super().__init__(all_sprites)
         self.image = img
@@ -766,7 +772,7 @@ class Tile(pygame.sprite.Sprite):
             self.image = pygame.transform.scale(tile_images[tile_type], (300, 300))
 
 
-class Camera:
+class Camera:  # класс камеры
     def __init__(self):
         self.dx = 0
         self.dy = 0
@@ -781,7 +787,7 @@ class Camera:
         self.dy = 0
 
 
-class Enemy(pygame.sprite.Sprite):
+class Enemy(pygame.sprite.Sprite):  # основной класс врагов
     def __init__(self, pos_x, pos_y, img):
         super().__init__(enemy_group, all_sprites)
         self.image = img
@@ -810,7 +816,7 @@ class Enemy(pygame.sprite.Sprite):
         self.image = pygame.transform.flip(self.enemy_image, self.left, False)
 
 
-class Enemy_1(Enemy):
+class Enemy_1(Enemy):  # класс движущихся врагов
     def update(self):
         self.step += 1
         self.change_frame()
@@ -821,12 +827,12 @@ class Enemy_1(Enemy):
         self.abs_pos[0] += self.speedx * FPS / 1000
 
 
-class Enemy_2(Enemy):
+class Enemy_2(Enemy):  # еще один класс врагов...
     def update(self):
         self.change_frame()
 
 
-class Enemy_5(Enemy):
+class Enemy_5(Enemy):  # класс главного злодея
     def update(self):
         if self.speedx != 0:
             self.change_frame()
@@ -854,7 +860,7 @@ class Enemy_5(Enemy):
             self.check = False
 
 
-class Player(pygame.sprite.Sprite):
+class Player(pygame.sprite.Sprite):  # класс игрока
     def __init__(self, pos_x, pos_y):
         global choosen_character_to_play
         super().__init__(player_group, all_sprites)
@@ -894,7 +900,8 @@ class Player(pygame.sprite.Sprite):
         self.cur_frame = 1
         self.image = self.frames[self.cur_frame]
         self.image = pygame.transform.scale(self.image, (97, 130))
-        self.player_image = self.image  # копия картинки персонажа, нужна для того чтобы по ней переворачивать картинку персонажа при ходьбе
+        self.player_image = self.image  # копия картинки персонажа, нужна для того чтобы по ней переворачивать
+        # картинку персонажа при ходьбе
         self.rect = pygame.Rect(0, 0, self.image.get_width() - 20, self.image.get_height())
 
         self.rect.left = pos_x * tile_width
@@ -903,6 +910,7 @@ class Player(pygame.sprite.Sprite):
     def transparency(self):
         pun = pygame.mixer.Sound('data/target.mp3')
         pun.play()
+        print(self.timer)
         self.become_trans = True
         x, y = self.rect.x, self.rect.y
         self.transparent_mod = True
@@ -919,6 +927,9 @@ class Player(pygame.sprite.Sprite):
         pun = pygame.mixer.Sound('data/target.mp3')
         pun.play()
         x, y = self.rect.x, self.rect.y
+
+        self.transparent_mod = False
+        self.become_trans = True
 
         cut_sheet(self, load_image('hero3.png'), 3, 1)
         self.cur_frame = 1
@@ -999,23 +1010,22 @@ class Player(pygame.sprite.Sprite):
             if sprite != self and sprite not in player_group:
                 camera.apply(sprite)
         # проверяем столкновение с врагом
-        if self.damage and self.timer == 1:
-            self.timer = 0
-            self.transparent_mod = False
+
+        if self.timer == 1:
             self.damage = False
         for sprite in pygame.sprite.spritecollide(self, enemy_group, False) + pygame.sprite.spritecollide(self,
                                                                                                           thorns_group,
                                                                                                           False):
             if self.transparent_mod:
+                self.damage = True
+                if self.timer == 1:
+                    self.untransparency()
                 self.timer = 0
-                pygame.time.set_timer(pygame.USEREVENT, 1500)
-                self.untransparency()
             else:
                 if not self.damage:
                     self.lives -= 1
                     self.damage = True
                     self.timer = 0
-                    pygame.time.set_timer(pygame.USEREVENT, 1500)
                     draw_hearts(self.lives)
 
         if self.lives == 0:
@@ -1045,14 +1055,13 @@ class Player(pygame.sprite.Sprite):
         self.player_image = self.frames[round(self.cur_frame) % len(self.frames)]
         self.player_image = pygame.transform.scale(self.player_image, (97, 130))
         self.image = pygame.transform.flip(self.player_image, self.left, False)
-        if self.damage and (not self.transparent_mod or self.transparent_mod is None):
+        if self.damage and ((not self.transparent_mod and self.become_trans) or self.transparent_mod is None):
             self.drop()
 
     def on_the_ground(self):
         # проверка стоит ли наш персонаж на земле
         for sprite in pygame.sprite.spritecollide(self, surface_group, False):
             if sprite.rect.top - 23 > self.rect.centery and sprite.tile_type == 'beautiful_surface':
-                # if not self.bad_moment:
                 self.start_camera_dy = camera.dy
                 self.rect.bottom = sprite.rect.top + 1
                 self.jump = False
@@ -1247,17 +1256,16 @@ if __name__ == '__main__':
                 write_progress()
                 running = False
             if event.type == pygame.USEREVENT:
-                # if player.damage or (player.transparent_mod or player.transparent_mod is None):
                 player.timer += 1
-                # else:
-                #    pygame.time.set_timer(pygame.USEREVENT, 0)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:  # здесь выстрел по нажатию пробела
                     player.shoot()
-                if event.key == pygame.K_z and choosen_character_to_play == 3:  # здесь если персонаж Donnie - делаем его невидимым
+                if event.key == pygame.K_z and choosen_character_to_play == 3:  # здесь если персонаж Donnie -
+                    # делаем его невидимым
                     if not player.become_trans:
                         player.transparency()
-                if event.key == pygame.K_z and choosen_character_to_play == 4:  # здесь если персонаж 4 - суперсила
+                if event.key == pygame.K_z and choosen_character_to_play == 4:  # здесь если персонаж Sandman - активируем
+                    # superbeam
                     player.super_beam()
         player.get_keys()
         coins = pixel_font.render(str(player.coins), 1, (255, 255, 255))
