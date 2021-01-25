@@ -42,13 +42,15 @@ def generate_level(level):
             if level[y][x] == '#':
                 Tile('beautiful_surface', x, y)
             if level[y][x] == '1':
-                Enemy(x, y)
+                Enemy_1(x, y)
             if level[y][x] == '?':
                 Tile('enemy', x, y)
             if level[y][x] == ',':
                 Tile('coin', x, y)
-            if level[y][x] == "!":
-                Tile("table", x, y)
+            if level[y][x] == "s":
+                Tile("start_table", x, y)
+            if level[y][x] == "e":
+                Tile("end_table", x, y)
             if level[y][x] == '@':
                 new_player = Player(x, y)
     return new_player
@@ -61,7 +63,7 @@ def draw_hearts(lives):
         heart = pygame.sprite.Sprite()
         heart.image = heart_image
         heart.rect = heart.image.get_rect()
-        heart.rect.top = 10
+        heart.rect.top = 25
         heart.rect.left = i * 50 + 50
         heart.add(hearts_group)
 
@@ -120,26 +122,48 @@ def start_screen():
 
 
 def end_screen():
-    screen.fill((0, 0, 0))
-    pixel_font = pygame.font.Font('data/pixel3.ttf', 108)
-    pixel_font2 = pygame.font.Font('data/pixel3.ttf', 40)
-    title = pixel_font.render('you lose!', 1, (255, 255, 255))
-    title_rect = title.get_rect(left=220, top=150)
+    pixel_font = pygame.font.Font('data/pixel3.ttf', 65)
+    pixel_font2 = pygame.font.Font('data/pixel3.ttf', 30)
+    zast = pygame.transform.scale(load_image("zast.png"), (1000, 800))
+    screen.blit(zast, (30, 0))
+
+    if player.win:
+        title = pixel_font.render('good job!', 1, (255, 255, 255))
+        motivation = pixel_font2.render('наверно тут будет написано что-то хорошее', 1, (255, 255, 255))
+        motivation2 = pixel_font2.render('даша, у тебя это лучше получается придумывать', 1, (255, 255, 255))
+        motivation3 = pixel_font2.render('поправишь в общем то....', 1, (255, 255, 255))
+        ramka = pygame.transform.scale(load_image("ramka.png"), (150, 110))
+        screen.blit(ramka, (290, 350))
+        result_coin = pygame.transform.scale(tile_images['coin'], (40, 40))
+        screen.blit(result_coin, (300, 360))
+        result_coins = pixel_font2.render('= ' + str(player.coins), 1, (255, 255, 255))
+        coins_rect3 = result_coins.get_rect(left=360, top=370)
+        screen.blit(result_coins, coins_rect3)
+        for i in range(player.lives):
+            screen.blit(heart_image, (310 + i * 40, 410))
+    else:
+        title = pixel_font.render('you lose =(', 1, (255, 255, 255))
+        motivation = pixel_font2.render('But determination is still burning', 1, (255, 255, 255))
+        motivation2 = pixel_font2.render('in the depth of your heart', 1, (255, 255, 255))
+        motivation3 = pixel_font2.render('Lets try again!', 1, (255, 255, 255))
+        skull = pygame.transform.scale(load_image("skull.png"), (130, 130))
+        screen.blit(skull, (350, 330))
+        screen.blit(skull, (450, 330))
+        screen.blit(skull, (550, 330))
+
+    title_rect = title.get_rect(left=340, top=155)
     screen.blit(title, title_rect)
 
-    image = pygame.transform.scale(load_image("finalri.png"), (200, 200))
-    screen.blit(image, (400, 400))
-
-    motivation = pixel_font2.render('But determination is still burning', 1, (255, 255, 255))
-    motivation_rect = motivation.get_rect(left=120, top=290)
-    motivation2 = pixel_font2.render('in the depth of your heart. Lets try again!', 1, (255, 255, 255))
-    motivation_rect2 = motivation.get_rect(left=100, top=320)
+    motivation_rect = motivation.get_rect(left=230, top=250)
+    motivation_rect2 = motivation2.get_rect(left=230, top=280)
+    motivation_rect3 = motivation3.get_rect(left=230, top=310)
     screen.blit(motivation, motivation_rect)
     screen.blit(motivation2, motivation_rect2)
+    screen.blit(motivation3, motivation_rect3)
 
     button_group = pygame.sprite.Group()
-    restart_btn = Button('restart', 200, 700, button_group)
-    quit_btn = Button('quit', 600, 700, button_group)
+    restart_btn = Button('restart', 280, 500, button_group)
+    quit_btn = Button('quit', 600, 500, button_group)
     pygame.time.set_timer(pygame.USEREVENT, 50)
 
     while True:
@@ -190,7 +214,7 @@ def restart():
 class Button(pygame.sprite.Sprite):
     def __init__(self, text, pos_x, pos_y, group):
         super().__init__(group)
-        self.font = pygame.font.Font('data/pixel3.ttf', 64)
+        self.font = pygame.font.Font('data/pixel3.ttf', 62)
         self.text = self.font.render(text, 1, (255, 255, 255))
         self.rect = self.text.get_rect(top=pos_y, left=pos_x)
         self.timer = 0
@@ -205,7 +229,7 @@ class Button(pygame.sprite.Sprite):
         if self.timer == 0:
             for i in range(self.rect.width // 10 + 1):
                 if i <= self.timer2:
-                    pygame.draw.rect(screen, (0, 0, 0),
+                    pygame.draw.rect(screen, (152, 94, 63),
                                      (int(self.rect.right - (i + 1) * 10), int(self.rect.bottom + 5), 10, 9))
 
 
@@ -219,6 +243,8 @@ class Tile(pygame.sprite.Sprite):
             self.add(coin_group)
         elif tile_type == 'enemy':
             self.add(enemy_group)
+        elif tile_type == 'end_table':
+            self.add(end_group)
         self.pos_x = pos_x
         self.image = pygame.transform.scale(tile_images[tile_type], (tile_width, tile_height))
         self.rect = self.image.get_rect().move(
@@ -244,15 +270,16 @@ class Camera:
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(enemy_group, all_sprites)
-        self.image = tile_images['enemy_1']
+        if isinstance(self, Enemy_1):
+            self.image = tile_images['enemy_1']
         self.image = pygame.transform.scale(self.image, (90, 110))
         self.image = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
-        self.abs_pos = [self.rect.x, self.rect.y]
+        self.abs_pos = [self.rect.x, self.rect.y - 20]
         self.speedx = - 80
         self.step = 0
-        self.left = False
+        self.left = True
 
         self.frames = []
         self.cut_sheet(self.image, 3, 1)
@@ -271,6 +298,14 @@ class Enemy(pygame.sprite.Sprite):
                 self.frames.append(sheet.subsurface(pygame.Rect(
                     frame_location, self.rect.size)))
 
+    def change_frame(self):
+        self.cur_frame = self.cur_frame + 0.1
+        self.enemy_image = self.frames[round(self.cur_frame) % len(self.frames)]
+        self.enemy_image = pygame.transform.scale(self.enemy_image, (97, 130))
+        self.image = pygame.transform.flip(self.enemy_image, self.left, False)
+
+
+class Enemy_1(Enemy):
     def update(self):
         self.step += 1
         self.change_frame()
@@ -280,18 +315,13 @@ class Enemy(pygame.sprite.Sprite):
             self.left = not self.left
         self.abs_pos[0] += self.speedx * FPS / 1000
 
-    def change_frame(self):
-        self.cur_frame = self.cur_frame + 0.1
-        self.enemy_image = self.frames[round(self.cur_frame) % len(self.frames)]
-        self.enemy_image = pygame.transform.scale(self.enemy_image, (97, 130))
-        self.image = pygame.transform.flip(self.enemy_image, self.left, False)
-
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
         self.speedx = 0
         self.speedy = 0
+        self.start_camera_dy = 0
 
         self.coins = 0
         self.lives = 3
@@ -301,7 +331,7 @@ class Player(pygame.sprite.Sprite):
         self.left = False
         self.bad_moment = False
         self.jump = False
-        self.start_camera_dy = 0
+        self.win = False
 
         self.frames = []
         self.cut_sheet(load_image('hero1.png'), 3, 1)
@@ -388,8 +418,8 @@ class Player(pygame.sprite.Sprite):
             camera.dx = 0
         if camera.dx < -len(level_map[0]) * tile_width + WIDTH:
             camera.dx = -len(level_map[0]) * tile_width + WIDTH
-        if camera.dy < tile_height * 3:
-            camera.dy = tile_height * 3
+        if camera.dy < tile_height * 2:
+            camera.dy = tile_height * 2
         # изменяем положение объектов относительно камеры
         for sprite in all_sprites:
             if sprite != self and sprite not in player_group:
@@ -397,7 +427,7 @@ class Player(pygame.sprite.Sprite):
         # проверяем столкновение с врагом
         if self.timer == 1:
             self.damage = False
-        for _ in pygame.sprite.spritecollide(self, enemy_group, False):
+        for sprite in pygame.sprite.spritecollide(self, enemy_group, False):
             if not self.damage:
                 self.lives -= 1
                 self.damage = True
@@ -405,7 +435,10 @@ class Player(pygame.sprite.Sprite):
                 pygame.time.set_timer(pygame.USEREVENT, 1500)
                 draw_hearts(self.lives)
         if self.lives == 0:
-            self.death()
+            self.end_of_level()
+        if pygame.sprite.spritecollide(self, end_group, False):
+            self.win = True
+            self.end_of_level()
 
     def drop(self):
         for x in range(self.image.get_width()):
@@ -471,7 +504,7 @@ class Player(pygame.sprite.Sprite):
         for sprite in pygame.sprite.spritecollide(self, coin_group, True):
             self.coins += 1
 
-    def death(self):
+    def end_of_level(self):
         end_screen()
 
 
@@ -490,6 +523,7 @@ if __name__ == '__main__':
     surface_group = pygame.sprite.Group()
     coin_group = pygame.sprite.Group()
     enemy_group = pygame.sprite.Group()
+    end_group = pygame.sprite.Group()
 
     # загружаем картинки объектов
     tile_width = tile_height = 50
@@ -498,8 +532,9 @@ if __name__ == '__main__':
         'beautiful_surface': load_image('grass.png'),
         'coin': load_image('coins.png'),
         'enemy': load_image('enemy1.png'),
-        'enemy_1': load_image('enemy1.png'),
-        'table': load_image('table.png')
+        'enemy_1': load_image('enemy_1.png'),
+        'start_table': load_image('table.png'),
+        'end_table': load_image('table.png')
     }
     heart_image = load_image('heart.png')
     # загружаем уровень
