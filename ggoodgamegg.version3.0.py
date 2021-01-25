@@ -79,56 +79,57 @@ def terminate():
     pygame.quit()
     sys.exit()
 
+def render(intro_text, text_coord):
+    for i in range(len(intro_text)):
+        font = pygame.font.Font("data/pixel3.ttf", 180 - i * 100)
+        string_rendered = font.render(intro_text[i], 1, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 250
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
 
 def start_screen():
+    global start
     intro_text = ["THE",
                   "SUITEHEARTS"]
 
-    background_image=pygame.image.load("data/back123.jpg").convert()
-    screen.blit(background_image, [0,0])
+    background_image = load_image("back.png")
+    screen.blit(background_image, [0, 0])
+    zast = pygame.transform.scale(load_image("dark_zast.png"), (1100, 900))
+    screen.blit(zast, (-30, 10))
+    decorative_group = pygame.sprite.Group()
+    for _ in range(9):
+        Decorative(random.randint(0, 1000), random.randint(0, 800), tile_images['dec_fly']).add(decorative_group)
 
-    zast = pygame.transform.scale(load_image("zast.png"), (1000, 800))
-    screen.blit(zast, (20, 0))
+    render(intro_text, 280)
 
-    coun = 0
-    text_coord = 280
-    for line in intro_text:
-        if coun == 0:
-            font = pygame.font.Font("data/pixel3.ttf", 180)
-            string_rendered = font.render(line, 1, pygame.Color('white'))
-            intro_rect = string_rendered.get_rect()
-            text_coord += 10
-            intro_rect.top = text_coord
-            intro_rect.x = 350
-            text_coord += intro_rect.height
-            screen.blit(string_rendered, intro_rect)
-        elif coun == 1:
-            font = pygame.font.Font("data/pixel3.ttf", 80)
-            string_rendered = font.render(line, 1, pygame.Color('white'))
-            intro_rect = string_rendered.get_rect()
-            text_coord += 10
-            intro_rect.top = text_coord
-            intro_rect.x = 250
-            text_coord += intro_rect.height
-            screen.blit(string_rendered, intro_rect)
-        coun += 1
     button_group_start = pygame.sprite.Group()
-    play_btn = Button('Go!!!', 430, 510, button_group_start)
-    shop_btn = Button('Shop', 230, 510, button_group_start)
-    quit_btn = Button('Quit', 630, 510, button_group_start)
+    play_btn = Button('Go!!!', 430, 550, button_group_start)
+    shop_btn = Button('Shop', 230, 550, button_group_start)
+    quit_btn = Button('Quit', 630, 550, button_group_start)
 
     pygame.time.set_timer(pygame.USEREVENT, 50)
     while True:
+        screen.blit(background_image, [0, 0])
+        decorative_group.draw(screen)
+        decorative_group.update()
+        screen.blit(zast, (-30, 10))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if play_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    start = False
+                    for sprite in decorative_group:
+                        sprite.kill()
                     return
                 if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     terminate()
                 if shop_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    pass                            # GO TO THE SHOP!!!
+                    pass  # GO TO THE SHOP!!!
             if event.type == pygame.USEREVENT:
                 for btn in button_group_start:
                     if btn.rect.collidepoint(pygame.mouse.get_pos()):
@@ -141,12 +142,14 @@ def start_screen():
         for btn in button_group_start:
             if btn.rect.collidepoint(pygame.mouse.get_pos()):
                 btn.highlight()
+        render(intro_text, 280)
         button_group_start.update()
         pygame.display.flip()
         clock.tick(FPS)
 
 
 def end_screen():
+    global start
     pixel_font = pygame.font.Font('data/pixel3.ttf', 65)
     pixel_font2 = pygame.font.Font('data/pixel3.ttf', 30)
     zast = pygame.transform.scale(load_image("zast.png"), (1000, 800))
@@ -188,10 +191,13 @@ def end_screen():
 
     button_group = pygame.sprite.Group()
     if player.win:
-        restart_btn = Button('next', 280, 500, button_group)
+        restart_btn = Button('next', 250, 500, button_group)
+        menu_btn = Button('menu', 440, 500, button_group)
+        quit_btn = Button('quit', 650, 500, button_group)
     else:
-        restart_btn = Button('restart', 280, 500, button_group)
-    quit_btn = Button('quit', 600, 500, button_group)
+        restart_btn = Button('restart', 220, 500, button_group)
+        menu_btn = Button('menu', 490, 500, button_group)
+        quit_btn = Button('quit', 670, 500, button_group)
     pygame.time.set_timer(pygame.USEREVENT, 50)
 
     while True:
@@ -204,6 +210,11 @@ def end_screen():
                     return
                 if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     terminate()
+                if menu_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    restart()
+                    start = True
+                    start_screen()
+                    return
             if event.type == pygame.USEREVENT:
                 for btn in button_group:
                     if btn.rect.collidepoint(pygame.mouse.get_pos()):
@@ -233,10 +244,11 @@ def restart():
         surface_group.remove(sprite)
     for sprite in coin_group:
         coin_group.remove(sprite)
-    camera = Camera()
-    camera.update(player)
+    player.kill()
     player = generate_level(level_map)
     draw_hearts(player.lives)
+    camera = Camera()
+    camera.update(player)
     pygame.time.set_timer(pygame.USEREVENT, 1500)
 
 
@@ -248,6 +260,30 @@ def cut_sheet(obj, sheet, columns, rows):
             frame_location = (obj.rect.w * i, obj.rect.h * j)
             obj.frames.append(sheet.subsurface(pygame.Rect(
                 frame_location, obj.rect.size)))
+
+
+class Button(pygame.sprite.Sprite):
+    def __init__(self, text, pos_x, pos_y, group):
+        super().__init__(group)
+        self.font = pygame.font.Font('data/pixel3.ttf', 60)
+        self.text = self.font.render(text, 1, (255, 255, 255))
+        self.rect = self.text.get_rect(top=pos_y, left=pos_x)
+        self.timer = 0
+        self.timer2 = 0
+
+    def update(self):
+        screen.blit(self.text, self.rect)
+
+    def highlight(self):
+        for i in range(self.rect.width // 10):
+            if i < self.timer:
+                pygame.draw.rect(screen, (255, 255, 255),
+                                 (int(self.rect.left + i * 10), int(self.rect.bottom + 5), 9, 9))
+        if self.timer == 0:
+            for i in range(self.rect.width // 10 + 1):
+                if i <= self.timer2:
+                    pygame.draw.rect(screen, (152, 94, 63) if not start else (37, 0, 0),
+                                     (int(self.rect.right - (i + 1) * 10), int(self.rect.bottom + 5), 10, 9))
 
 
 class Decorative(pygame.sprite.Sprite):
@@ -269,6 +305,8 @@ class Decorative(pygame.sprite.Sprite):
                                             (self.img_copy.get_width() // 9, self.img_copy.get_height() // 3))
         self.rect = self.image.get_rect()
         self.step = 0
+        if start:
+            self.rect.center = (pos_x, pos_y)
 
     def change_frame(self):
         self.cur_frame = self.cur_frame + 0.1
@@ -279,32 +317,14 @@ class Decorative(pygame.sprite.Sprite):
     def update(self):
         self.step += 1
         self.change_frame()
-        if self.step == 10:
+        if self.step == 10 and not start:
             self.abs_pos[0] += random.randint(-15, 15)
             self.abs_pos[1] += random.randint(-15, 15)
             self.step = 0
-
-
-class Button(pygame.sprite.Sprite):
-    def __init__(self, text, pos_x, pos_y, group):
-        super().__init__(group)
-        self.font = pygame.font.Font('data/pixel3.ttf', 62)
-        self.text = self.font.render(text, 1, (255, 255, 255))
-        self.rect = self.text.get_rect(top=pos_y, left=pos_x)
-        self.timer = 0
-        self.timer2 = 0
-        screen.blit(self.text, self.rect)
-
-    def highlight(self):
-        for i in range(self.rect.width // 10):
-            if i < self.timer:
-                pygame.draw.rect(screen, (255, 255, 255),
-                                 (int(self.rect.left + i * 10), int(self.rect.bottom + 5), 9, 9))
-        if self.timer == 0:
-            for i in range(self.rect.width // 10 + 1):
-                if i <= self.timer2:
-                    pygame.draw.rect(screen, (152, 94, 63),
-                                     (int(self.rect.right - (i + 1) * 10), int(self.rect.bottom + 5), 10, 9))
+        if start and self.step == 10:
+            self.rect.x += random.randint(-15, 15)
+            self.rect.y += random.randint(-15, 15)
+            self.step = 0
 
 
 class Tile(pygame.sprite.Sprite):
@@ -616,18 +636,8 @@ if __name__ == '__main__':
     pygame.display.set_caption('TheSTHR')
     clock = pygame.time.Clock()
     pygame.time.set_timer(pygame.USEREVENT, 1500)
-    start_screen()
+    start = True
 
-    # прописываем группы спрайтов
-    all_sprites = pygame.sprite.Group()
-    player_group = pygame.sprite.Group()
-    surface_group = pygame.sprite.Group()
-    coin_group = pygame.sprite.Group()
-    enemy_group = pygame.sprite.Group()
-    end_group = pygame.sprite.Group()
-    bullet_group = pygame.sprite.Group()
-
-    # загружаем картинки объектов
     tile_width = tile_height = 50
     tile_images = {
         'surface': load_image('ground.jpg'),
@@ -640,9 +650,22 @@ if __name__ == '__main__':
         'end_table': load_image('table.png'),
         'dec_heart': load_image('dec_1.png'),
         'dec_dragonfly': load_image('dec_2.png'),
+        'dec_fly': load_image('fly.png'),
         'bullet': load_image('fire.png')
     }
     heart_image = load_image('heart.png')
+
+    # прописываем группы спрайтов
+    all_sprites = pygame.sprite.Group()
+    player_group = pygame.sprite.Group()
+    surface_group = pygame.sprite.Group()
+    coin_group = pygame.sprite.Group()
+    enemy_group = pygame.sprite.Group()
+    end_group = pygame.sprite.Group()
+    bullet_group = pygame.sprite.Group()
+
+    start_screen()
+
     # загружаем уровень
     level_map = load_level('map.map')
     player = generate_level(level_map)
