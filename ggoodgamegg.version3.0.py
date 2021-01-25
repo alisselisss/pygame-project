@@ -83,7 +83,7 @@ def draw_hearts(lives):
 
 def terminate():
     pygame.quit()
-    write_progress()
+    # write_progress()
     sys.exit()
 
 
@@ -188,7 +188,7 @@ def level_menu():
     level_9_rect = pygame.Rect(640, 505, 70, 100)
     level_10_rect = pygame.Rect(750, 430, 100, 150)
 
-    hero = load_image(f'hero{choosen_character_to_play}.png')
+    hero = load_image(f'dark_hero{choosen_character_to_play}.png')
     frames = []
     for i in range(3):
         frames.append(hero.subsurface(pygame.Rect(
@@ -202,6 +202,7 @@ def level_menu():
     if choosen_level == 10:
         pos[1] = level_10_rect.centery
     dx = dy = 0
+
 
     while True:
         screen.blit(background_image, [0, 0])
@@ -955,7 +956,6 @@ class Bullet(pygame.sprite.Sprite):
         self.speedx = 13 if not player.left else -13
         self.abs_pos = [self.rect.x, self.rect.y]
         self.collision = False
-
         self.cur_frame = 0
         self.boom_image = load_image('boom.png')
         self.frames = []
