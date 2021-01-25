@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+import random
 from math import ceil
 
 WIDTH = 1000
@@ -51,6 +52,10 @@ def generate_level(level):
                 Tile("start_table", x, y)
             if level[y][x] == "e":
                 Tile("end_table", x, y)
+            if level[y][x] == "h":
+                Decorative(x, y, tile_images['dec_heart'])
+            if level[y][x] == "d":
+                Decorative(x, y, tile_images['dec_dragonfly'])
             if level[y][x] == '@':
                 new_player = Player(x, y)
     return new_player
@@ -209,6 +214,52 @@ def restart():
     camera.update(player)
     player = generate_level(level_map)
     draw_hearts(player.lives)
+    pygame.time.set_timer(pygame.USEREVENT, 1500)
+
+
+def cut_sheet(obj, sheet, columns, rows):
+    obj.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                           sheet.get_height() // rows)
+    for j in range(rows):
+        for i in range(columns):
+            frame_location = (obj.rect.w * i, obj.rect.h * j)
+            obj.frames.append(sheet.subsurface(pygame.Rect(
+                frame_location, obj.rect.size)))
+
+
+class Decorative(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, img):
+        super().__init__(all_sprites)
+        self.image = img
+        self.img_copy = img
+        self.image = pygame.transform.scale(self.image,
+                                            (self.img_copy.get_width() // 9, self.img_copy.get_height() // 3))
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x, tile_height * pos_y)
+        self.abs_pos = [self.rect.x, self.rect.y]
+
+        self.frames = []
+        cut_sheet(self, self.image, 3, 1)
+        self.cur_frame = random.randint(0, 2)
+        self.image = self.frames[self.cur_frame]
+        self.image = pygame.transform.scale(self.image,
+                                            (self.img_copy.get_width() // 9, self.img_copy.get_height() // 3))
+        self.rect = self.image.get_rect()
+        self.step = 0
+
+    def change_frame(self):
+        self.cur_frame = self.cur_frame + 0.1
+        self.image = self.frames[round(self.cur_frame) % len(self.frames)]
+        self.image = pygame.transform.scale(self.image,
+                                            (self.img_copy.get_width() // 9, self.img_copy.get_height() // 3))
+
+    def update(self):
+        self.step += 1
+        self.change_frame()
+        if self.step == 10:
+            self.abs_pos[0] += random.randint(-15, 15)
+            self.abs_pos[1] += random.randint(-15, 15)
+            self.step = 0
 
 
 class Button(pygame.sprite.Sprite):
@@ -282,21 +333,12 @@ class Enemy(pygame.sprite.Sprite):
         self.left = True
 
         self.frames = []
-        self.cut_sheet(self.image, 3, 1)
+        cut_sheet(self, self.image, 3, 1)
         self.cur_frame = 1
         self.image = self.frames[self.cur_frame]
         self.image = pygame.transform.scale(self.image, (97, 130))
         self.enemy_image = self.image
         self.rect = self.image.get_rect()
-
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        for j in range(rows):
-            for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
 
     def change_frame(self):
         self.cur_frame = self.cur_frame + 0.1
@@ -334,7 +376,7 @@ class Player(pygame.sprite.Sprite):
         self.win = False
 
         self.frames = []
-        self.cut_sheet(load_image('hero1.png'), 3, 1)
+        cut_sheet(self, load_image('hero1.png'), 3, 1)
         self.cur_frame = 1
         self.image = self.frames[self.cur_frame]
         self.image = pygame.transform.scale(self.image, (97, 130))
@@ -343,15 +385,6 @@ class Player(pygame.sprite.Sprite):
 
         self.rect.left = pos_x * tile_width
         self.rect.centery = pos_y * tile_height
-
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        for j in range(rows):
-            for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
 
     def get_keys(self):
         # проверяем какие клавиши нажаты, задаем скорость ходьбы
@@ -514,7 +547,7 @@ if __name__ == '__main__':
     screen.fill((0, 0, 0))
     pygame.display.set_caption('TheSTHR')
     clock = pygame.time.Clock()
-    pygame.time.set_timer(pygame.USEREVENT, 0)
+    pygame.time.set_timer(pygame.USEREVENT, 1500)
     start_screen()
 
     # прописываем группы спрайтов
@@ -534,7 +567,9 @@ if __name__ == '__main__':
         'enemy': load_image('enemy1.png'),
         'enemy_1': load_image('enemy_1.png'),
         'start_table': load_image('table.png'),
-        'end_table': load_image('table.png')
+        'end_table': load_image('table.png'),
+        'dec_heart': load_image('dec_1.png'),
+        'dec_dragonfly': load_image('dec_2.png')
     }
     heart_image = load_image('heart.png')
     # загружаем уровень
@@ -563,12 +598,12 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.USEREVENT:
-                player.timer += 1
-                if player.timer == 3:
+                if player.damage:
+                    player.timer += 1
+                else:
                     pygame.time.set_timer(pygame.USEREVENT, 0)
         player.get_keys()
         coins = pixel_font.render(str(player.coins), 1, (255, 255, 255))
-
         hearts_group.draw(screen)
         all_sprites.draw(screen)
         all_sprites.update()
