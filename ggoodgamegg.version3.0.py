@@ -82,12 +82,16 @@ def terminate():
 
 def start_screen():
     intro_text = ["THE",
-                  "SUITEHEARTS",
-                  "press any button to start"]
+                  "SUITEHEARTS"]
 
-    screen.fill((0, 0, 0))
+    background_image=pygame.image.load("data/back123.jpg").convert()
+    screen.blit(background_image, [0,0])
+
+    zast = pygame.transform.scale(load_image("zast.png"), (1000, 800))
+    screen.blit(zast, (20, 0))
+
     coun = 0
-    text_coord = 150
+    text_coord = 280
     for line in intro_text:
         if coun == 0:
             font = pygame.font.Font("data/pixel3.ttf", 180)
@@ -107,22 +111,37 @@ def start_screen():
             intro_rect.x = 250
             text_coord += intro_rect.height
             screen.blit(string_rendered, intro_rect)
-        else:
-            font = pygame.font.Font("data/pixel3.ttf", 20)
-            string_rendered = font.render(line, 1, pygame.Color('white'))
-            intro_rect = string_rendered.get_rect()
-            text_coord += 350
-            intro_rect.top = text_coord
-            intro_rect.x = 350
-            text_coord += intro_rect.height
-            screen.blit(string_rendered, intro_rect)
         coun += 1
+    button_group_start = pygame.sprite.Group()
+    play_btn = Button('Go!!!', 430, 510, button_group_start)
+    shop_btn = Button('Shop', 230, 510, button_group_start)
+    quit_btn = Button('Quit', 630, 510, button_group_start)
+
+    pygame.time.set_timer(pygame.USEREVENT, 50)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN:
-                return  # начинаем игру
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if play_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    return
+                if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    terminate()
+                if shop_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    pass                            # GO TO THE SHOP!!!
+            if event.type == pygame.USEREVENT:
+                for btn in button_group_start:
+                    if btn.rect.collidepoint(pygame.mouse.get_pos()):
+                        btn.timer += 1
+                        btn.timer2 = 0
+                    else:
+                        btn.timer = 0
+                        btn.timer2 += 1
+                        btn.highlight()
+        for btn in button_group_start:
+            if btn.rect.collidepoint(pygame.mouse.get_pos()):
+                btn.highlight()
+        button_group_start.update()
         pygame.display.flip()
         clock.tick(FPS)
 
