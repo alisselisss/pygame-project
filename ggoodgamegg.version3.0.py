@@ -48,13 +48,21 @@ def generate_level(level):
             if level[y][x] == '#':
                 Tile('beautiful_surface', x, y)
             if level[y][x] == '1':
-                Enemy_1(x, y)
+                Enemy_1(x, y, tile_images['enemy_1'])
             if level[y][x] == '2':
-                Enemy_2(x, y)
+                Enemy_2(x, y, tile_images['enemy_2'])
+            if level[y][x] == '3':
+                Enemy_1(x, y, tile_images['enemy_3'])
+            if level[y][x] == '4':
+                Enemy_2(x, y, tile_images['enemy_4'])
+            if level[y][x] == '5':
+                Enemy_5(x, y, tile_images['enemy_5'])
             if level[y][x] == '?':
                 Tile('enemy', x, y)
             if level[y][x] == ',':
                 Tile('coin', x, y)
+            if level[y][x] == 'k':
+                Tile('key', x, y)
             if level[y][x] == "s":
                 Tile("start_table", x, y)
             if level[y][x] == "e":
@@ -63,6 +71,8 @@ def generate_level(level):
                 Tile("thorns", x, y)
             if level[y][x] == "T":
                 Tile("thorns_2", x, y)
+            if level[y][x] == "i":
+                Tile("thorns_3", x, y)
             if level[y][x] == "h":
                 Decorative(x, y, tile_images['dec_heart'])
             if level[y][x] == "d":
@@ -71,6 +81,10 @@ def generate_level(level):
                 Decorative(x, y, tile_images['dec_bat'])
             if level[y][x] == "f":
                 Decorative(x, y, tile_images['dec_fly'])
+            if level[y][x] == "q":
+                Tile("instruction", x, y)
+            if level[y][x] == "`":
+                Tile("instruction_2", x, y)
             if level[y][x] == '@':
                 new_player = Player(x, y)
     return new_player
@@ -86,6 +100,18 @@ def draw_hearts(lives):
         heart.rect.top = 25
         heart.rect.left = i * 50 + 50
         heart.add(hearts_group)
+
+
+def draw_keys(keys):
+    global my_keys_group
+    for i in range(keys):
+        key = pygame.sprite.Sprite()
+        key.image = tile_images['key']
+        key.image = pygame.transform.scale(key.image, (50, 60))
+        key.rect = key.image.get_rect()
+        key.rect.top = 80
+        key.rect.left = i * 50 + 50
+        key.add(my_keys_group)
 
 
 def terminate():
@@ -204,8 +230,9 @@ def level_menu():
         )))
     cur_frame = 1
     pos = [0, 0]
-    pos[0] = eval(f'level_{choosen_level if choosen_level else 1}_rect').centerx - 30
-    pos[1] = eval(f'level_{choosen_level if choosen_level else 1}_rect').centery - 40
+    if choosen_level < 10:
+        pos[0] = eval(f'level_{choosen_level if choosen_level else 1}_rect').centerx - 30
+        pos[1] = eval(f'level_{choosen_level if choosen_level else 1}_rect').centery - 40
     if choosen_level == 10:
         pos[1] = level_10_rect.centery
     dx = dy = 0
@@ -344,15 +371,15 @@ def shop():
                     result, result_rect = None, None
                     name = "Dr Benzedrine"
                 if hsc_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    hero_frames, description = show_character("HorseShoe Crab", 160, 2)
+                    hero_frames, description = show_character("HorseShoe Crab", 1000, 2)
                     result, result_rect = None, None
                     name = "HorseShoe Crab"
                 if dtc_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    hero_frames, description = show_character("Donnie The Catcher", 350, 3)
+                    hero_frames, description = show_character("Donnie The Catcher", 2100, 3)
                     result, result_rect = None, None
                     name = "Donnie The Catcher"
                 if mrsd_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    hero_frames, description = show_character("Mr Sandman", 666, 4)
+                    hero_frames, description = show_character("Mr Sandman", 3666, 4)
                     result, result_rect = None, None
                     name = "Mr Sandman"
 
@@ -491,6 +518,10 @@ def end_screen():
         motivation = pixel_font2.render('Now you can feel your heartbeat', 1, (255, 255, 255))
         motivation2 = pixel_font2.render('beating in unison with', 1, (255, 255, 255))
         motivation3 = pixel_font2.render('your power. It becomes stronger...', 1, (255, 255, 255))
+        if choosen_level == 10:
+            motivation = pixel_font2.render('The look is clean. Thoughts are pure.', 1, (255, 255, 255))
+            motivation2 = pixel_font2.render('The soul is open to doing good.', 1, (255, 255, 255))
+            motivation3 = pixel_font2.render("The path is not easy, worthy...", 1, (255, 255, 255))
         if choosen_character_to_play == 1:
             ramka = pygame.transform.scale(load_image("ramka.png"), (160, 110))
             screen.blit(ramka, (290, 350))
@@ -534,7 +565,6 @@ def end_screen():
         progress_dict['player_coins'] += player.coins
     elif player.win and choosen_level == 10:
         restart_btn = None
-        choosen_level += 1
         progress_dict[f'level_{choosen_level}'] = 1
         progress_dict['player_coins'] += player.coins
         menu_btn = Button('Menu', 330, 500, button_group)
@@ -574,7 +604,7 @@ def end_screen():
 
 
 def restart():
-    global player, camera, background, background_rect, start, level_map, tile_images
+    global player, camera, background, background_rect, start, level_map, tile_images, my_keys_group
     start = False
     for sprite in all_sprites:
         all_sprites.remove(sprite)
@@ -594,17 +624,19 @@ def restart():
         player.kill()
     except Exception:
         pass
-    background = pygame.transform.scale(load_image(eval(f'level_{choosen_level}_dict["back"]')), (1000, 800))
-    background_rect = background.get_rect()
-    tile_images['surface'] = load_image(eval(f'level_{choosen_level}_dict["surface"]'))
-    tile_images['beautiful_surface'] = load_image(eval(f'level_{choosen_level}_dict["beautiful_surface"]'))
-    level_map = load_level(eval(f'level_{choosen_level}_dict["level_map"]'))
-    player = generate_level(level_map)
+    if choosen_level <= 10:
+        background = pygame.transform.scale(load_image(eval(f'level_{choosen_level}_dict["back"]')), (1000, 800))
+        background_rect = background.get_rect()
+        tile_images['surface'] = load_image(eval(f'level_{choosen_level}_dict["surface"]'))
+        tile_images['beautiful_surface'] = load_image(eval(f'level_{choosen_level}_dict["beautiful_surface"]'))
+        level_map = load_level(eval(f'level_{choosen_level}_dict["level_map"]'))
+        player = generate_level(level_map)
+        my_keys_group = pygame.sprite.Group()
 
-    draw_hearts(player.lives)
-    camera = Camera()
-    camera.update(player)
-    pygame.time.set_timer(pygame.USEREVENT, 1500)
+        draw_hearts(player.lives)
+        camera = Camera()
+        camera.update(player)
+        pygame.time.set_timer(pygame.USEREVENT, 1500)
 
 
 def cut_sheet(obj, sheet, columns, rows):
@@ -693,11 +725,13 @@ class Tile(pygame.sprite.Sprite):
             self.add(surface_group)
         elif tile_type == 'coin':
             self.add(coin_group)
+        elif tile_type == 'key':
+            self.add(key_group)
         elif tile_type == 'enemy':
             self.add(enemy_group)
         elif tile_type == 'end_table':
             self.add(end_group)
-        elif tile_type == 'thorns' or tile_type == 'thorns_2':
+        elif tile_type == 'thorns' or tile_type == 'thorns_2' or tile_type == 'thorns_3':
             self.add(thorns_group)
         self.tile_type = tile_type
         self.pos_x = pos_x
@@ -708,6 +742,8 @@ class Tile(pygame.sprite.Sprite):
 
         if tile_type == 'end_table' or tile_type == 'start_table':
             self.image = pygame.transform.scale(tile_images[tile_type], (100, 100))
+        if tile_type == 'instruction' or tile_type == 'instruction_2':
+            self.image = pygame.transform.scale(tile_images[tile_type], (300, 300))
 
 
 class Camera:
@@ -726,20 +762,17 @@ class Camera:
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
+    def __init__(self, pos_x, pos_y, img):
         super().__init__(enemy_group, all_sprites)
-        if isinstance(self, Enemy_1):
-            self.image = tile_images['enemy_1']
-        elif isinstance(self, Enemy_2):
-            self.image = tile_images['enemy_2']
-        self.image = pygame.transform.scale(self.image, (90, 110))
+        self.image = img
         self.image = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
-        self.abs_pos = [self.rect.x, self.rect.y - 20]
-        self.speedx = - 80
+        self.abs_pos = [self.rect.x, self.rect.y - 25]
+        self.speedx = -(random.randint(60, 90))
         self.step = 0
         self.left = True
+        self.check = False
 
         self.frames = []
         cut_sheet(self, self.image, 3, 1)
@@ -752,7 +785,8 @@ class Enemy(pygame.sprite.Sprite):
     def change_frame(self):
         self.cur_frame = self.cur_frame + 0.1
         self.enemy_image = self.frames[round(self.cur_frame) % len(self.frames)]
-        self.enemy_image = pygame.transform.scale(self.enemy_image, (97, 130))
+        self.enemy_image = pygame.transform.scale(self.enemy_image,
+                                                  (97, 130) if not isinstance(self, Enemy_5) else (194, 260))
         self.image = pygame.transform.flip(self.enemy_image, self.left, False)
 
 
@@ -772,6 +806,34 @@ class Enemy_2(Enemy):
         self.change_frame()
 
 
+class Enemy_5(Enemy):
+    def update(self):
+        if self.speedx != 0:
+            self.change_frame()
+        if -camera.dx + player.rect.x - 25 > self.abs_pos[0] and not pygame.sprite.spritecollide(self, surface_group,
+                                                                                                 False):
+            self.left = False
+            self.speedx = 70
+        elif -camera.dx + player.rect.x + 25 < self.abs_pos[0] and not pygame.sprite.spritecollide(self, surface_group,
+                                                                                                   False):
+            self.left = True
+            self.speedx = - 70
+        else:
+            self.speedx = 0
+        for sprite in pygame.sprite.spritecollide(self, surface_group, False):
+            self.speedx = 0
+            if sprite.rect.right >= self.rect.right + 10:
+                self.abs_pos[0] -= 0.01
+            elif sprite.rect.right - 45 <= self.rect.right:
+                self.abs_pos[0] += 0.01
+        self.abs_pos[0] += self.speedx * FPS / 1000
+        if player.timer % 2 == 0 and not self.check:
+            self.check = True
+            BulletEnemy(self.rect.centerx - camera.dx, self.rect.centery - camera.dy)
+        elif player.timer % 2 == 1:
+            self.check = False
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         global choosen_character_to_play
@@ -784,6 +846,7 @@ class Player(pygame.sprite.Sprite):
         self.frames = []
 
         self.coins = 0
+        self.key = 0
         if choosen_character_to_play == 1:
             self.lives = 3
             self.transparent_mod = None
@@ -818,6 +881,8 @@ class Player(pygame.sprite.Sprite):
         self.rect.centery = pos_y * tile_height
 
     def transparency(self):
+        pun = pygame.mixer.Sound('data/target.mp3')
+        pun.play()
         self.become_trans = True
         x, y = self.rect.x, self.rect.y
         self.transparent_mod = True
@@ -831,6 +896,8 @@ class Player(pygame.sprite.Sprite):
         self.rect = pygame.Rect(x, y, self.image.get_width() - 20, self.image.get_height())
 
     def untransparency(self):
+        pun = pygame.mixer.Sound('data/target.mp3')
+        pun.play()
         x, y = self.rect.x, self.rect.y
 
         cut_sheet(self, load_image('hero3.png'), 3, 1)
@@ -912,7 +979,7 @@ class Player(pygame.sprite.Sprite):
             if sprite != self and sprite not in player_group:
                 camera.apply(sprite)
         # проверяем столкновение с врагом
-        if self.timer == 1:
+        if self.damage and self.timer == 1:
             self.timer = 0
             self.transparent_mod = False
             self.damage = False
@@ -921,7 +988,7 @@ class Player(pygame.sprite.Sprite):
                                                                                                           False):
             if self.transparent_mod:
                 self.timer = 0
-                pygame.time.set_timer(pygame.USEREVENT, 2000)
+                pygame.time.set_timer(pygame.USEREVENT, 1500)
                 self.untransparency()
             else:
                 if not self.damage:
@@ -930,9 +997,12 @@ class Player(pygame.sprite.Sprite):
                     self.timer = 0
                     pygame.time.set_timer(pygame.USEREVENT, 1500)
                     draw_hearts(self.lives)
+
         if self.lives == 0:
             self.end_of_level()
-        if pygame.sprite.spritecollide(self, end_group, False):
+
+        if (pygame.sprite.spritecollide(self, end_group, False) and choosen_level != 10) or \
+                (pygame.sprite.spritecollide(self, end_group, False) and choosen_level == 10 and player.key == 3):
             self.win = True
             self.end_of_level()
 
@@ -962,7 +1032,7 @@ class Player(pygame.sprite.Sprite):
         # проверка стоит ли наш персонаж на земле
         for sprite in pygame.sprite.spritecollide(self, surface_group, False):
             if sprite.rect.top - 23 > self.rect.centery and sprite.tile_type == 'beautiful_surface':
-                #if not self.bad_moment:
+                # if not self.bad_moment:
                 self.start_camera_dy = camera.dy
                 self.rect.bottom = sprite.rect.top + 1
                 self.jump = False
@@ -999,6 +1069,9 @@ class Player(pygame.sprite.Sprite):
         # собираем монетки
         for sprite in pygame.sprite.spritecollide(self, coin_group, True):
             self.coins += 1
+        for sprite in pygame.sprite.spritecollide(self, key_group, True):
+            self.key += 1
+            draw_keys(self.key)
 
     def end_of_level(self):
         end_screen()
@@ -1022,7 +1095,14 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.centerx = pos_x
 
         self.starting_pos = pos_x
-        self.speedx = 13 if not player.left else -13
+        if isinstance(self, BulletEnemy):
+            self.end_pos = [0, 0]
+            self.end_pos[0] = player.rect.centerx - camera.dx
+            self.end_pos[1] = player.rect.centery - camera.dy
+            self.speedx = -(pos_x - self.end_pos[0]) / 100
+            self.speedy = -(pos_y - self.end_pos[1]) / 50
+        else:
+            self.speedx = 14 if not player.left else - 14
 
         self.abs_pos = [self.rect.x, self.rect.y]
 
@@ -1034,14 +1114,16 @@ class Bullet(pygame.sprite.Sprite):
 
     def update(self):
         global choosen_character_to_play
-        for sprite in pygame.sprite.spritecollide(self, enemy_group, True):
-            self.abs_pos = sprite.abs_pos
-            self.collision = True
-            if choosen_character_to_play == 2:  # Если персонаж HShoeCrab - монет выпадает вдвое больше!!!
-                player.coins += random.randint(16, 30)
-            else:
-                player.coins += random.randint(8, 15)
-            self.speedx = 0
+        for sprite in pygame.sprite.spritecollide(self, enemy_group, False):
+            if not isinstance(sprite, Enemy_5) or (isinstance(sprite, Enemy_5) and choosen_character_to_play == 4):
+                sprite.kill()
+                self.abs_pos = sprite.abs_pos
+                self.collision = True
+                if choosen_character_to_play == 2:  # Если персонаж HShoeCrab - монет выпадает вдвое больше!!!
+                    player.coins += random.randint(16, 30)
+                else:
+                    player.coins += random.randint(8, 15)
+                self.speedx = 0
         if self.collision:
             self.boom()
         else:
@@ -1055,6 +1137,28 @@ class Bullet(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (64, 64))
         if self.cur_frame > 7:
             self.kill()
+
+
+class BulletEnemy(Bullet):
+    def update(self):
+        if player.timer < 3 and not self.collision:
+            self.kill()
+        for sprite in pygame.sprite.spritecollide(self, player_group, False):
+            self.abs_pos[0] = player.rect.centerx - camera.dx
+            self.abs_pos[1] = player.rect.centery - camera.dy
+            self.collision = True
+            self.speedx = 0
+            if player.timer > 3:
+                player.timer = 0
+                player.drop()
+                player.damage = True
+                player.lives -= 1
+                draw_hearts(player.lives)
+        if self.collision:
+            self.boom()
+        else:
+            self.abs_pos[0] += self.speedx
+            self.abs_pos[1] += self.speedy
 
 
 if __name__ == '__main__':
@@ -1071,9 +1175,13 @@ if __name__ == '__main__':
         'surface': load_image('ground.jpg'),
         'beautiful_surface': load_image('grass.png'),
         'coin': load_image('coins.png'),
+        'key': load_image('key.png'),
         'enemy': load_image('enemy1.png'),
         'enemy_1': load_image('enemy_1.png'),
         'enemy_2': load_image('enemy_2.png'),
+        'enemy_3': load_image('enemy_3.png'),
+        'enemy_4': load_image('enemy_4.png'),
+        'enemy_5': load_image('enemy_3.png'),
         'start_table': load_image('table.png'),
         'end_table': load_image('table.png'),
         'dec_heart': load_image('dec_1.png'),
@@ -1081,7 +1189,10 @@ if __name__ == '__main__':
         'dec_bat': load_image('dec_3.png'),
         'dec_fly': load_image('fly.png'),
         'thorns': load_image('thorns.png'),
-        'thorns_2': load_image('thorns_2.png')
+        'thorns_2': load_image('thorns_2.png'),
+        'thorns_3': load_image('thorns_3.png'),
+        'instruction': load_image('start.png'),
+        'instruction_2': load_image('start_2.png')
     }
     heart_image = load_image('heart.png')
 
@@ -1090,6 +1201,8 @@ if __name__ == '__main__':
     player_group = pygame.sprite.Group()
     surface_group = pygame.sprite.Group()
     coin_group = pygame.sprite.Group()
+    key_group = pygame.sprite.Group()
+    my_keys_group = pygame.sprite.Group()
     enemy_group = pygame.sprite.Group()
     end_group = pygame.sprite.Group()
     bullet_group = pygame.sprite.Group()
@@ -1103,6 +1216,7 @@ if __name__ == '__main__':
     coins_rect = coins.get_rect(center=(900, 50))
 
     running = True
+
     while running:
         screen.fill((0, 0, 0))
         screen.blit(background, background_rect)
@@ -1111,22 +1225,22 @@ if __name__ == '__main__':
                 write_progress()
                 running = False
             if event.type == pygame.USEREVENT:
-                if player.damage or (player.transparent_mod or player.transparent_mod is None):
-                    player.timer += 1
-                else:
-                    pygame.time.set_timer(pygame.USEREVENT, 0)
+                # if player.damage or (player.transparent_mod or player.transparent_mod is None):
+                player.timer += 1
+                # else:
+                #    pygame.time.set_timer(pygame.USEREVENT, 0)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:  # здесь выстрел по нажатию пробела
                     player.shoot()
                 if event.key == pygame.K_z and choosen_character_to_play == 3:  # здесь если персонаж Donnie - делаем его невидимым
                     if not player.become_trans:
                         player.transparency()
-                if event.key == pygame.K_z and choosen_character_to_play == 4:  # здесь если персонаж 4 - делаем его невидимым
+                if event.key == pygame.K_z and choosen_character_to_play == 4:  # здесь если персонаж 4 - суперсила
                     player.super_beam()
-
         player.get_keys()
         coins = pixel_font.render(str(player.coins), 1, (255, 255, 255))
         hearts_group.draw(screen)
+        my_keys_group.draw(screen)
         all_sprites.draw(screen)
         all_sprites.update()
         screen.blit(coins, coins_rect)
