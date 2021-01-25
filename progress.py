@@ -35,23 +35,31 @@ level_9_dict = {'level_map': 'map_9.map',
                 'beautiful_surface': 'grass.png',
                 'back': 'back123.jpg'}
 level_10_dict = {'level_map': 'map_10.map',
-                'surface': 'ground.jpg',
-                'beautiful_surface': 'grass.png',
-                'back': 'back123.jpg'}
-coins = 0
+                 'surface': 'ground.jpg',
+                 'beautiful_surface': 'grass.png',
+                 'back': 'back123.jpg'}
 
-hero_1 = True
-hero_2 = False
-hero_3 = False
-hero_4 = False
+progress_dict = {'player_coins': 0,
+                 'hero_1': 1, 'hero_2': 0, 'hero_3': 0, 'hero_4': 0,
+                 'level_1': 1, 'level_2': 2, 'level_3': 3, 'level_4': 0, 'level_5': 0,
+                 'level_6': 0, 'level_7': 0, 'level_8': 0, 'level_9': 0, 'level_10': 0}
 
-level_1 = True
-level_2 = True
-level_3 = True
-level_4 = False
-level_5 = False
-level_6 = False
-level_7 = False
-level_8 = False
-level_9 = False
-level_10 = False
+
+def load_progress():
+    global progress_dict
+
+    file = open('progress.txt')
+    text = file.read().splitlines()
+    for i in text:
+        key = i[:i.find('=') - 1]
+        progress_dict[key] = int(i[i.find('=') + 2:])
+    file.close()
+
+
+def write_progress():
+    global progress_dict
+
+    file = open('progress.txt', 'w')
+    for key, val in progress_dict.items():
+        file.write(f'{key} = {val}\n')
+    file.close()

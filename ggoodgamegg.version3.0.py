@@ -9,7 +9,7 @@ HEIGHT = 800
 
 FPS = 60
 
-player_coins = 0  # Сколько монет у игрока, по сути вносится во время UPDATE у игрока или из БД
+# player_coins = 0  # Сколько монет у игрока, по сути вносится во время UPDATE у игрока или из БД
 choosen_price = 0  # Цена предположительно-выбираемого персонажа, нужна для сравнения кол-ва денег и покупки
 choosen_character = 1  # условно выбранный персонаж!
 choosen_character_to_play = 1  # номер выбранного персонажа, 1 - дефолтный
@@ -83,6 +83,7 @@ def draw_hearts(lives):
 
 def terminate():
     pygame.quit()
+    write_progress()
     sys.exit()
 
 
@@ -155,11 +156,11 @@ def start_screen():
 
 
 def my_money():
-    ramka = pygame.transform.scale(load_image("card.png"), (500, 40))
-    screen.blit(ramka, (-200, 10))
+    ramka = pygame.transform.scale(load_image("card.png"), (800, 40))
+    screen.blit(ramka, (-300, 10))
     screen.blit(pygame.transform.scale(tile_images['coin'], (40, 40)), (0, 10))
     text_font = pygame.font.Font('data/pixel3.ttf', 35)
-    desc = text_font.render('= ' + str(player_coins), 1, (255, 255, 255))
+    desc = text_font.render('= ' + str(progress_dict['player_coins']), 1, (255, 255, 255))
     desc_rect = desc.get_rect(left=50, top=20)
     screen.blit(desc, desc_rect)
 
@@ -199,7 +200,7 @@ def level_menu():
     pos[0] = eval(f'level_{choosen_level if choosen_level else 1}_rect').centerx - 30
     pos[1] = eval(f'level_{choosen_level if choosen_level else 1}_rect').centery - 40
     if choosen_level == 10:
-        pos[1] = level_10.centery
+        pos[1] = level_10_rect.centery
     dx = dy = 0
 
     while True:
@@ -212,7 +213,7 @@ def level_menu():
                 if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     terminate()
                 if menu_btn.rect.collidepoint(pygame.mouse.get_pos()):
-                    choosen_level = 1
+                    choosen_level = 0
                     return
                 if run_btn.rect.collidepoint(pygame.mouse.get_pos()) and choosen_level:
                     restart()
@@ -225,7 +226,7 @@ def level_menu():
                         btn.timer -= 1
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for i in range(1, 11):
-                    if eval(f"level_{i}_rect.collidepoint(pygame.mouse.get_pos())") and eval(f'level_{i}'):
+                    if eval(f"level_{i}_rect.collidepoint(pygame.mouse.get_pos())") and eval(f'progress_dict["level_{i}"]'):
                         choosen_level = i
                         pos = [round(pos[0] + dx), round(pos[1] + dy)]
                         dx = pos[0] - event.pos[0]
@@ -250,7 +251,7 @@ def level_menu():
         else:
             cur_frame = 1
         for i in range(1, 10):
-            if not eval(f'level_{i}'):
+            if not eval(f'progress_dict["level_{i}"]'):
                 screen.blit(load_image('close.png'), eval(f'level_{i}_rect'))
         screen.blit(image, (round(pos[0] + dx), round(pos[1] + dy)))
         for btn in button_group:
@@ -317,7 +318,6 @@ def shop():
     mrsd_btn = Button('Sandman', 370, 620, button_group, little=2, light=False)
 
     my_money()
-
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -325,6 +325,7 @@ def shop():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if buy_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     result, result_rect = buy_character()  # ВЫБОР ПЕРСОНАЖА!
+                    my_money()
                 if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     terminate()
                 if menu_btn.rect.collidepoint(pygame.mouse.get_pos()):
@@ -377,6 +378,23 @@ def shop():
             screen.blit(title, title_rect)
         if not result is None:
             screen.blit(result, result_rect)
+
+        if progress_dict[f'hero_{choosen_character}'] and not hero_frames is None:
+            bought = text_font.render('you have', 1, (255, 255, 255))
+            bought_rect = bought.get_rect(left=790, top=200)
+            screen.blit(bought, bought_rect)
+            bought = text_font.render('already', 1, (255, 255, 255))
+            bought_rect = bought.get_rect(left=790, top=230)
+            screen.blit(bought, bought_rect)
+            bought = text_font.render('bougth', 1, (255, 255, 255))
+            bought_rect = bought.get_rect(left=790, top=260)
+            screen.blit(bought, bought_rect)
+            bought = text_font.render('this', 1, (255, 255, 255))
+            bought_rect = bought.get_rect(left=790, top=290)
+            screen.blit(bought, bought_rect)
+            bought = text_font.render('character!', 1, (255, 255, 255))
+            bought_rect = bought.get_rect(left=790, top=320)
+            screen.blit(bought, bought_rect)
         button_group.update()
         pygame.display.flip()
         clock.tick(FPS)
@@ -437,9 +455,15 @@ def show_character(name, price, num):
 def buy_character():
     global choosen_character, choosen_character_to_play, choosen_price
     text_font = pygame.font.Font('data/pixel3.ttf', 19)
-    if player_coins >= choosen_price or choosen_character == 1:
+    if progress_dict['player_coins'] >= choosen_price and not\
+            progress_dict[f'hero_{choosen_character}']:
         choosen_character_to_play = choosen_character
         desc = text_font.render("Successful!", 1, (255, 255, 255))
+        progress_dict['player_coins'] -= choosen_price
+        progress_dict[f'hero_{choosen_character_to_play}'] = 1
+    elif progress_dict[f'hero_{choosen_character}']:
+        desc = text_font.render("Character applied!", 1, (255, 255, 255))
+        choosen_character_to_play = choosen_character
     else:
         desc = text_font.render("You need more coins!", 1, (255, 255, 255))
     desc_rect = desc.get_rect(left=700, top=620)
@@ -448,7 +472,7 @@ def buy_character():
 
 
 def end_screen():
-    global start, choosen_level, level_1, level_2, level_3, level_4, level_5, level_6, level_7, level_8, level_9, level_10, player_coins
+    global start, choosen_level, progress_dict
     pixel_font = pygame.font.Font('data/pixel3.ttf', 65)
     pixel_font2 = pygame.font.Font('data/pixel3.ttf', 30)
     zast = pygame.transform.scale(load_image("zast.png"), (1000, 800))
@@ -494,28 +518,13 @@ def end_screen():
         menu_btn = Button('Menu', 440, 500, button_group)
         quit_btn = Button('Quit', 650, 500, button_group)
         choosen_level += 1
-        if choosen_level == 2:
-            level_2 = True
-        elif choosen_level == 3:
-            level_3 = True
-        elif choosen_level == 4:
-            level_4 = True
-        elif choosen_level == 5:
-            level_5 = True
-        elif choosen_level == 6:
-            level_6 = True
-        elif choosen_level == 7:
-            level_7 = True
-        elif choosen_level == 8:
-            level_8 = True
-        elif choosen_level == 9:
-            level_9 = True
-        elif choosen_level == 10:
-            level_10 = True
-        player_coins += player.coins
+        progress_dict[f'level_{choosen_level}'] = 1
+        progress_dict['player_coins'] += player.coins
     elif player.win and choosen_level == 10:
         restart_btn = None
-        player_coins += player.coins
+        choosen_level += 1
+        progress_dict[f'level_{choosen_level}'] = 1
+        progress_dict['player_coins'] += player.coins
         menu_btn = Button('Menu', 330, 500, button_group)
         quit_btn = Button('Quit', 600, 500, button_group)
     else:
@@ -553,7 +562,7 @@ def end_screen():
 
 
 def restart():
-    global player, camera, level_map, background, background_rect, start
+    global player, camera, background, background_rect, start, level_map
     start = False
     for sprite in all_sprites:
         all_sprites.remove(sprite)
@@ -982,6 +991,7 @@ if __name__ == '__main__':
     pygame.display.set_caption('TheSTHR')
     clock = pygame.time.Clock()
     pygame.time.set_timer(pygame.USEREVENT, 1500)
+    load_progress()
 
     tile_width = tile_height = 50
     tile_images = {
@@ -1022,6 +1032,7 @@ if __name__ == '__main__':
         screen.blit(background, background_rect)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                write_progress()
                 running = False
             if event.type == pygame.USEREVENT:
                 if player.damage:
