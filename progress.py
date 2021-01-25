@@ -11,17 +11,17 @@ level_3_dict = {'level_map': 'map_3.map',
                 'beautiful_surface': 'grass.png',
                 'back': 'back123.png'}
 level_4_dict = {'level_map': 'map_4.map',
-                'surface': 'ground.jpg',
-                'beautiful_surface': 'grass.png',
-                'back': 'back123.jpg'}
+                'surface': 'ground_4.png',
+                'beautiful_surface': 'grass_4.png',
+                'back': 'back4.png'}
 level_5_dict = {'level_map': 'map_5.map',
-                'surface': 'ground.jpg',
-                'beautiful_surface': 'grass.png',
-                'back': 'back123.jpg'}
+                'surface': 'ground_graves.jpg',
+                'beautiful_surface': 'grass_graves.png',
+                'back': 'back5.png'}
 level_6_dict = {'level_map': 'map_6.map',
-                'surface': 'ground.jpg',
-                'beautiful_surface': 'grass.png',
-                'back': 'back123.jpg'}
+                'surface': 'ground_6.png',
+                'beautiful_surface': 'grass_6.png',
+                'back': 'back6.png'}
 level_7_dict = {'level_map': 'map_7.map',
                 'surface': 'ground.jpg',
                 'beautiful_surface': 'grass.png',

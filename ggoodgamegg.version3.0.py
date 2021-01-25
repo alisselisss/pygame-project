@@ -9,7 +9,6 @@ HEIGHT = 800
 
 FPS = 60
 
-# player_coins = 0  # Сколько монет у игрока, по сути вносится во время UPDATE у игрока или из БД
 choosen_price = 0  # Цена предположительно-выбираемого персонажа, нужна для сравнения кол-ва денег и покупки
 choosen_character = 1  # условно выбранный персонаж!
 choosen_character_to_play = 1  # номер выбранного персонажа, 1 - дефолтный
@@ -60,10 +59,18 @@ def generate_level(level):
                 Tile("start_table", x, y)
             if level[y][x] == "e":
                 Tile("end_table", x, y)
+            if level[y][x] == "t":
+                Tile("thorns", x, y)
+            if level[y][x] == "T":
+                Tile("thorns_2", x, y)
             if level[y][x] == "h":
                 Decorative(x, y, tile_images['dec_heart'])
             if level[y][x] == "d":
                 Decorative(x, y, tile_images['dec_dragonfly'])
+            if level[y][x] == "b":
+                Decorative(x, y, tile_images['dec_bat'])
+            if level[y][x] == "f":
+                Decorative(x, y, tile_images['dec_fly'])
             if level[y][x] == '@':
                 new_player = Player(x, y)
     return new_player
@@ -203,7 +210,6 @@ def level_menu():
         pos[1] = level_10_rect.centery
     dx = dy = 0
 
-
     while True:
         screen.blit(background_image, [0, 0])
         screen.blit(map_image, [40, 10])
@@ -227,7 +233,8 @@ def level_menu():
                         btn.timer -= 1
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for i in range(1, 11):
-                    if eval(f"level_{i}_rect.collidepoint(pygame.mouse.get_pos())") and eval(f'progress_dict["level_{i}"]'):
+                    if eval(f"level_{i}_rect.collidepoint(pygame.mouse.get_pos())") and eval(
+                            f'progress_dict["level_{i}"]'):
                         choosen_level = i
                         pos = [round(pos[0] + dx), round(pos[1] + dy)]
                         dx = pos[0] - event.pos[0]
@@ -456,7 +463,7 @@ def show_character(name, price, num):
 def buy_character():
     global choosen_character, choosen_character_to_play, choosen_price
     text_font = pygame.font.Font('data/pixel3.ttf', 19)
-    if progress_dict['player_coins'] >= choosen_price and not\
+    if progress_dict['player_coins'] >= choosen_price and not \
             progress_dict[f'hero_{choosen_character}']:
         choosen_character_to_play = choosen_character
         desc = text_font.render("Successful!", 1, (255, 255, 255))
@@ -579,11 +586,15 @@ def restart():
         surface_group.remove(sprite)
     for sprite in coin_group:
         coin_group.remove(sprite)
+    for sprite in thorns_group:
+        thorns_group.remove(sprite)
+    for sprite in end_group:
+        end_group.remove(sprite)
     try:
         player.kill()
     except Exception:
         pass
-    background = load_image(eval(f'level_{choosen_level}_dict["back"]'))
+    background = pygame.transform.scale(load_image(eval(f'level_{choosen_level}_dict["back"]')), (1000, 800))
     background_rect = background.get_rect()
     tile_images['surface'] = load_image(eval(f'level_{choosen_level}_dict["surface"]'))
     tile_images['beautiful_surface'] = load_image(eval(f'level_{choosen_level}_dict["beautiful_surface"]'))
@@ -686,6 +697,9 @@ class Tile(pygame.sprite.Sprite):
             self.add(enemy_group)
         elif tile_type == 'end_table':
             self.add(end_group)
+        elif tile_type == 'thorns' or tile_type == 'thorns_2':
+            self.add(thorns_group)
+        self.tile_type = tile_type
         self.pos_x = pos_x
         self.image = pygame.transform.scale(tile_images[tile_type], (tile_width, tile_height))
         self.rect = self.image.get_rect().move(
@@ -705,7 +719,6 @@ class Camera:
         # изменяем положение обьектов, в соотвествии с камерой
         obj.rect.x = obj.abs_pos[0] + self.dx
         obj.rect.y = obj.abs_pos[1] + self.dy
-
 
     def update(self, target):
         self.dx = 0
@@ -768,20 +781,25 @@ class Player(pygame.sprite.Sprite):
         self.start_camera_dy = 0
 
         self.become_trans = False
+        self.frames = []
 
         self.coins = 0
         if choosen_character_to_play == 1:
             self.lives = 3
             self.transparent_mod = None
+            cut_sheet(self, load_image('hero1.png'), 3, 1)
         elif choosen_character_to_play == 2:
             self.lives = 4
             self.transparent_mod = None
+            cut_sheet(self, load_image('hero2.png'), 3, 1)
         elif choosen_character_to_play == 3:
-            self.transparent_mod = False   # мод невидимости для Донни
+            self.transparent_mod = False  # мод невидимости для Донни
             self.lives = 5
+            cut_sheet(self, load_image('hero3.png'), 3, 1)
         elif choosen_character_to_play == 4:
             self.lives = 6
             self.transparent_mod = None
+            cut_sheet(self, load_image('hero4.png'), 3, 1)
         self.timer = 0
 
         self.damage = False
@@ -789,17 +807,6 @@ class Player(pygame.sprite.Sprite):
         self.bad_moment = False
         self.jump = False
         self.win = False
-
-        self.frames = []
-
-        if choosen_character_to_play == 1:
-            cut_sheet(self, load_image('hero1.png'), 3, 1)
-        elif choosen_character_to_play == 2:
-            cut_sheet(self, load_image('hero2.png'), 3, 1)
-        elif choosen_character_to_play == 3:
-            cut_sheet(self, load_image('hero3.png'), 3, 1)
-        elif choosen_character_to_play == 4:
-            cut_sheet(self, load_image('hero4.png'), 3, 1)
 
         self.cur_frame = 1
         self.image = self.frames[self.cur_frame]
@@ -819,7 +826,7 @@ class Player(pygame.sprite.Sprite):
         self.cur_frame = 1
         self.image = self.frames[self.cur_frame]
         self.image = pygame.transform.scale(self.image, (97, 130))
-        self.player_image = self.image  # копия картинки персонажа, нужна для того чтобы по ней переворачивать картинку персонажа при ходьбеs
+        self.player_image = self.image
 
         self.rect = pygame.Rect(x, y, self.image.get_width() - 20, self.image.get_height())
 
@@ -830,10 +837,9 @@ class Player(pygame.sprite.Sprite):
         self.cur_frame = 1
         self.image = self.frames[self.cur_frame]
         self.image = pygame.transform.scale(self.image, (97, 130))
-        self.player_image = self.image  # копия картинки персонажа, нужна для того чтобы по ней переворачивать картинку персонажа при ходьбеs
+        self.player_image = self.image
 
         self.rect = pygame.Rect(x, y, self.image.get_width() - 20, self.image.get_height())
-
 
     def get_keys(self):
         # проверяем какие клавиши нажаты, задаем скорость ходьбы
@@ -856,7 +862,7 @@ class Player(pygame.sprite.Sprite):
             self.jump = True
             camera.dy += 0.4
         # анимация ходьбы, если ни одна клавиша не нажата, то оставляем 1 frame
-        if any(keystate):
+        if keystate[pygame.K_LEFT] or keystate[pygame.K_RIGHT] or keystate[pygame.K_UP]:
             self.change_frame()
         else:
             self.cur_frame = 1
@@ -871,6 +877,8 @@ class Player(pygame.sprite.Sprite):
             self.change_frame()
         else:
             self.speedy = 0
+        camera.dy -= self.speedy if (self.jump and (self.speedy < 8 or self.speedy > 9)) or not self.jump else 0
+        self.rect.y += self.speedy
 
         # проверяем, что наш игрок не ушел за границы карты
         if self.rect.left < 300 and camera.dx != 0:
@@ -881,7 +889,6 @@ class Player(pygame.sprite.Sprite):
         # перемещаем игрока с проверкой, не уходит ли он за границы карты
         if self.rect.right + self.speedx <= WIDTH and self.rect.left + self.speedx >= 0:
             self.rect.x += self.speedx
-        self.rect.y += self.speedy
         # без этого будет казаться, что где-то он ходит быстрее, а где-то медленнее
         if self.rect.right > WIDTH - 300 or self.rect.left < 300:
             self.speedx *= 1.5
@@ -889,19 +896,17 @@ class Player(pygame.sprite.Sprite):
         if not (self.rect.right >= WIDTH - 300 and camera.dx == -len(level_map[0]) * tile_width + WIDTH) and not \
                 (self.rect.left < 300 and camera.dx == 0):
             camera.dx -= self.speedx
-        camera.dy -= self.speedy
         # self.bad_moment - отвечает за смещение камеры, когда наш персонаж стукается о платформу сверху,
         # чтобы камера возвращалась в положение до прыжка
         if self.bad_moment and self.on_the_ground():
-            camera.dy = self.start_camera_dy
             self.bad_moment = False
         # проверяем, чтобы наша камера не уходила за границы уровня
         if camera.dx > 0:
             camera.dx = 0
         if camera.dx < -len(level_map[0]) * tile_width + WIDTH:
             camera.dx = -len(level_map[0]) * tile_width + WIDTH
-        if camera.dy < tile_height * 2:
-            camera.dy = tile_height * 2
+        if camera.dy < level_map.count(['/' * len(level_map[0])]):
+            camera.dy = level_map.count(['/' * len(level_map[0])])
         # изменяем положение объектов относительно камеры
         for sprite in all_sprites:
             if sprite != self and sprite not in player_group:
@@ -911,7 +916,9 @@ class Player(pygame.sprite.Sprite):
             self.timer = 0
             self.transparent_mod = False
             self.damage = False
-        for sprite in pygame.sprite.spritecollide(self, enemy_group, False):
+        for sprite in pygame.sprite.spritecollide(self, enemy_group, False) + pygame.sprite.spritecollide(self,
+                                                                                                          thorns_group,
+                                                                                                          False):
             if self.transparent_mod:
                 self.timer = 0
                 pygame.time.set_timer(pygame.USEREVENT, 2000)
@@ -942,7 +949,6 @@ class Player(pygame.sprite.Sprite):
                 self.image.set_at((x, y), pygame.Color(r, g, b, a))
                 self.player_image = self.image
 
-
     def change_frame(self):
         # анимация ходьбы
         self.cur_frame = self.cur_frame + 0.1
@@ -955,8 +961,8 @@ class Player(pygame.sprite.Sprite):
     def on_the_ground(self):
         # проверка стоит ли наш персонаж на земле
         for sprite in pygame.sprite.spritecollide(self, surface_group, False):
-            if sprite.rect.top - 23 > self.rect.centery:
-                # if not self.bad_moment:
+            if sprite.rect.top - 23 > self.rect.centery and sprite.tile_type == 'beautiful_surface':
+                #if not self.bad_moment:
                 self.start_camera_dy = camera.dy
                 self.rect.bottom = sprite.rect.top + 1
                 self.jump = False
@@ -1072,7 +1078,10 @@ if __name__ == '__main__':
         'end_table': load_image('table.png'),
         'dec_heart': load_image('dec_1.png'),
         'dec_dragonfly': load_image('dec_2.png'),
-        'dec_fly': load_image('fly.png')
+        'dec_bat': load_image('dec_3.png'),
+        'dec_fly': load_image('fly.png'),
+        'thorns': load_image('thorns.png'),
+        'thorns_2': load_image('thorns_2.png')
     }
     heart_image = load_image('heart.png')
 
@@ -1084,6 +1093,7 @@ if __name__ == '__main__':
     enemy_group = pygame.sprite.Group()
     end_group = pygame.sprite.Group()
     bullet_group = pygame.sprite.Group()
+    thorns_group = pygame.sprite.Group()
 
     start = True
     start_screen()
@@ -1113,7 +1123,6 @@ if __name__ == '__main__':
                         player.transparency()
                 if event.key == pygame.K_z and choosen_character_to_play == 4:  # здесь если персонаж 4 - делаем его невидимым
                     player.super_beam()
-
 
         player.get_keys()
         coins = pixel_font.render(str(player.coins), 1, (255, 255, 255))
