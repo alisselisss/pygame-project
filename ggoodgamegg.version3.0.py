@@ -164,6 +164,8 @@ def start_screen():
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if play_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    pun = pygame.mixer.Sound('data/press.mp3')
+                    pun.play()
                     for sprite in decorative_group:
                         sprite.kill()
                     level_menu()
@@ -173,6 +175,8 @@ def start_screen():
                     terminate()
                 if shop_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     shop()  # GO TO THE SHOP!!!
+                    pun = pygame.mixer.Sound('data/press.mp3')
+                    pun.play()
             if event.type == pygame.USEREVENT:
                 for btn in button_group_start:
                     if btn.rect.collidepoint(pygame.mouse.get_pos()) and btn.timer < btn.rect.x // 10:
@@ -247,9 +251,13 @@ def level_menu():
                 if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     terminate()
                 if menu_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    pun = pygame.mixer.Sound('data/press.mp3')
+                    pun.play()
                     choosen_level = 0
                     return
                 if run_btn.rect.collidepoint(pygame.mouse.get_pos()) and choosen_level:
+                    pun = pygame.mixer.Sound('data/press.mp3')
+                    pun.play()
                     restart()
                     return
             if event.type == pygame.USEREVENT:
@@ -359,11 +367,15 @@ def shop():
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if buy_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    pun = pygame.mixer.Sound('data/press.mp3')
+                    pun.play()
                     result, result_rect = buy_character()  # ВЫБОР ПЕРСОНАЖА!
                     my_money()
                 if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     terminate()
                 if menu_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    pun = pygame.mixer.Sound('data/press.mp3')
+                    pun.play()
                     start = True
                     return
                 if bnzd_btn.rect.collidepoint(pygame.mouse.get_pos()):
@@ -514,6 +526,8 @@ def end_screen():
     screen.blit(zast, (30, 0))
 
     if player.win:
+        pun = pygame.mixer.Sound('data/won.mp3')
+        pun.play()
         title = pixel_font.render('Great job!', 1, (255, 255, 255))
         motivation = pixel_font2.render('Now you can feel your heartbeat', 1, (255, 255, 255))
         motivation2 = pixel_font2.render('beating in unison with', 1, (255, 255, 255))
@@ -536,6 +550,8 @@ def end_screen():
         for i in range(player.lives):
             screen.blit(heart_image, (310 + i * 40, 410))
     else:
+        pun = pygame.mixer.Sound('data/fail.mp3')
+        pun.play()
         title = pixel_font.render('you lose =(', 1, (255, 255, 255))
         motivation = pixel_font2.render('But determination is still burning', 1, (255, 255, 255))
         motivation2 = pixel_font2.render('in the depth of your heart', 1, (255, 255, 255))
@@ -581,11 +597,15 @@ def end_screen():
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if not restart_btn is None and restart_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    pun = pygame.mixer.Sound('data/press.mp3')
+                    pun.play()
                     restart()
                     return
                 if quit_btn.rect.collidepoint(pygame.mouse.get_pos()):
                     terminate()
                 if menu_btn.rect.collidepoint(pygame.mouse.get_pos()):
+                    pun = pygame.mixer.Sound('data/press.mp3')
+                    pun.play()
                     restart()
                     start = True
                     start_screen()
@@ -827,10 +847,10 @@ class Enemy_5(Enemy):
             elif sprite.rect.right - 45 <= self.rect.right:
                 self.abs_pos[0] += 0.01
         self.abs_pos[0] += self.speedx * FPS / 1000
-        if player.timer % 2 == 0 and not self.check:
+        if player.timer % 5 == 0 and not self.check:
             self.check = True
             BulletEnemy(self.rect.centerx - camera.dx, self.rect.centery - camera.dy)
-        elif player.timer % 2 == 1:
+        elif player.timer % 5 == 1:
             self.check = False
 
 
@@ -1077,11 +1097,11 @@ class Player(pygame.sprite.Sprite):
         end_screen()
 
     def shoot(self):
+        pun = pygame.mixer.Sound('data/punch.mp3')
+        pun.play()
         Bullet(self.rect.centerx - camera.dx, self.rect.centery - camera.dy)
 
     def super_beam(self):
-        Bullet(self.rect.centerx - camera.dx, self.rect.centery - camera.dy)
-        Bullet(self.rect.centerx - camera.dx, self.rect.centery - camera.dy)
         Bullet(self.rect.centerx - camera.dx, self.rect.centery - camera.dy)
 
 
@@ -1125,6 +1145,8 @@ class Bullet(pygame.sprite.Sprite):
                     player.coins += random.randint(8, 15)
                 self.speedx = 0
         if self.collision:
+            pun = pygame.mixer.Sound('data/kill.mp3')
+            pun.play()
             self.boom()
         else:
             self.abs_pos[0] += self.speedx
