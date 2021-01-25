@@ -27,17 +27,17 @@ level_7_dict = {'level_map': 'map_7.map',
                 'beautiful_surface': 'grass.png',
                 'back': 'back123.jpg'}
 level_8_dict = {'level_map': 'map_8.map',
-                'surface': 'ground.jpg',
-                'beautiful_surface': 'grass.png',
-                'back': 'back123.jpg'}
+                'surface': 'ground_lab.jpg',
+                'beautiful_surface': 'grass_lab.png',
+                'back': 'back121.jpg'}
 level_9_dict = {'level_map': 'map_9.map',
-                'surface': 'ground.jpg',
-                'beautiful_surface': 'grass.png',
-                'back': 'back123.jpg'}
+                'surface': 'ground_graves.jpg',
+                'beautiful_surface': 'grass_graves.png',
+                'back': 'back5.png'}
 level_10_dict = {'level_map': 'map_10.map',
-                 'surface': 'ground.jpg',
-                 'beautiful_surface': 'grass.png',
-                 'back': 'back123.jpg'}
+                'surface': 'ground_6.png',
+                'beautiful_surface': 'grass_6.png',
+                'back': 'back6.png'}
 
 progress_dict = {'player_coins': 0,
                  'hero_1': 1, 'hero_2': 0, 'hero_3': 0, 'hero_4': 0,

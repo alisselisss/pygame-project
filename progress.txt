@@ -1,8 +1,8 @@
-player_coins = 2331
+player_coins = 259233
 hero_1 = 1
 hero_2 = 1
 hero_3 = 0
-hero_4 = 0
+hero_4 = 1
 level_1 = 1
 level_2 = 1
 level_3 = 1
@@ -13,3 +13,4 @@ level_7 = 1
 level_8 = 1
 level_9 = 1
 level_10 = 1
+level_11 = 1
