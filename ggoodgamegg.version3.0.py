@@ -133,10 +133,10 @@ def end_screen():
     screen.blit(zast, (30, 0))
 
     if player.win:
-        title = pixel_font.render('good job!', 1, (255, 255, 255))
-        motivation = pixel_font2.render('наверно тут будет написано что-то хорошее', 1, (255, 255, 255))
-        motivation2 = pixel_font2.render('даша, у тебя это лучше получается придумывать', 1, (255, 255, 255))
-        motivation3 = pixel_font2.render('поправишь в общем то....', 1, (255, 255, 255))
+        title = pixel_font.render('Great job!', 1, (255, 255, 255))
+        motivation = pixel_font2.render('Now you can feel your heartbeat', 1, (255, 255, 255))
+        motivation2 = pixel_font2.render('beating in unison with', 1, (255, 255, 255))
+        motivation3 = pixel_font2.render('your power. It becomes stronger...', 1, (255, 255, 255))
         ramka = pygame.transform.scale(load_image("ramka.png"), (150, 110))
         screen.blit(ramka, (290, 350))
         result_coin = pygame.transform.scale(tile_images['coin'], (40, 40))
@@ -167,7 +167,10 @@ def end_screen():
     screen.blit(motivation3, motivation_rect3)
 
     button_group = pygame.sprite.Group()
-    restart_btn = Button('restart', 280, 500, button_group)
+    if player.win:
+        restart_btn = Button('next', 280, 500, button_group)
+    else:
+        restart_btn = Button('restart', 280, 500, button_group)
     quit_btn = Button('quit', 600, 500, button_group)
     pygame.time.set_timer(pygame.USEREVENT, 50)
 
@@ -232,8 +235,7 @@ class Decorative(pygame.sprite.Sprite):
         super().__init__(all_sprites)
         self.image = img
         self.img_copy = img
-        self.image = pygame.transform.scale(self.image,
-                                            (self.img_copy.get_width() // 9, self.img_copy.get_height() // 3))
+        self.image = pygame.transform.scale(self.image, (self.img_copy.get_width() // 9, self.img_copy.get_height() // 3))
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
         self.abs_pos = [self.rect.x, self.rect.y]
@@ -242,16 +244,14 @@ class Decorative(pygame.sprite.Sprite):
         cut_sheet(self, self.image, 3, 1)
         self.cur_frame = random.randint(0, 2)
         self.image = self.frames[self.cur_frame]
-        self.image = pygame.transform.scale(self.image,
-                                            (self.img_copy.get_width() // 9, self.img_copy.get_height() // 3))
+        self.image = pygame.transform.scale(self.image, (self.img_copy.get_width() // 9, self.img_copy.get_height() // 3))
         self.rect = self.image.get_rect()
         self.step = 0
 
     def change_frame(self):
         self.cur_frame = self.cur_frame + 0.1
         self.image = self.frames[round(self.cur_frame) % len(self.frames)]
-        self.image = pygame.transform.scale(self.image,
-                                            (self.img_copy.get_width() // 9, self.img_copy.get_height() // 3))
+        self.image = pygame.transform.scale(self.image, (self.img_copy.get_width() // 9, self.img_copy.get_height() // 3))
 
     def update(self):
         self.step += 1
@@ -296,11 +296,38 @@ class Tile(pygame.sprite.Sprite):
             self.add(enemy_group)
         elif tile_type == 'end_table':
             self.add(end_group)
+        # elif tile_type == 'bullet':
+        #     self.add(bullets)
         self.pos_x = pos_x
         self.image = pygame.transform.scale(tile_images[tile_type], (tile_width, tile_height))
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
         self.abs_pos = (self.rect.x, self.rect.y)
+
+
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self, center, size):
+        pygame.sprite.Sprite.__init__(self)
+        self.size = size
+        self.image = explosion_anim[self.size][0]
+        self.rect = self.image.get_rect()
+        self.rect.center = center
+        self.frame = 0
+        self.last_update = pygame.time.get_ticks()
+        self.frame_rate = 50
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.frame_rate:
+            self.last_update = now
+            self.frame += 1
+            if self.frame == len(explosion_anim[self.size]):
+                self.kill()
+            else:
+                center = self.rect.center
+                self.image = explosion_anim[self.size][self.frame]
+                self.rect = self.image.get_rect()
+                self.rect.center = center
 
 
 class Camera:
@@ -323,6 +350,8 @@ class Enemy(pygame.sprite.Sprite):
         super().__init__(enemy_group, all_sprites)
         if isinstance(self, Enemy_1):
             self.image = tile_images['enemy_1']
+        else:
+            self.image = tile_images['enemy']
         self.image = pygame.transform.scale(self.image, (90, 110))
         self.image = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect().move(
@@ -346,6 +375,9 @@ class Enemy(pygame.sprite.Sprite):
         self.enemy_image = pygame.transform.scale(self.enemy_image, (97, 130))
         self.image = pygame.transform.flip(self.enemy_image, self.left, False)
 
+    def update(self):
+        self.change_frame()
+        self.abs_pos[0] += self.speedx * FPS / 1000
 
 class Enemy_1(Enemy):
     def update(self):
@@ -540,6 +572,28 @@ class Player(pygame.sprite.Sprite):
     def end_of_level(self):
         end_screen()
 
+    def shoot(self):
+        bullet = Bullet(self.rect.centerx, self.rect.top)
+        all_sprites.add(bullet)
+        bullets.add(bullet)
+
+
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load('data/fire.png').convert_alpha()
+        self.rect = self.image.get_rect()
+        self.rect.bottom = y
+        self.rect.centerx = x
+        self.speedy = 10
+        self.abs_pos = [self.rect.x, self.rect.y]
+
+    def update(self):
+        self.rect.x += self.speedy
+        # убить, если он заходит за верхнюю часть экрана
+        if self.rect.bottom < 0:
+            self.kill()
+
 
 if __name__ == '__main__':
     pygame.init()
@@ -557,6 +611,7 @@ if __name__ == '__main__':
     coin_group = pygame.sprite.Group()
     enemy_group = pygame.sprite.Group()
     end_group = pygame.sprite.Group()
+    bullets = pygame.sprite.Group()
 
     # загружаем картинки объектов
     tile_width = tile_height = 50
@@ -569,7 +624,8 @@ if __name__ == '__main__':
         'start_table': load_image('table.png'),
         'end_table': load_image('table.png'),
         'dec_heart': load_image('dec_1.png'),
-        'dec_dragonfly': load_image('dec_2.png')
+        'dec_dragonfly': load_image('dec_2.png'),
+        'bullet': load_image('fire.png')
     }
     heart_image = load_image('heart.png')
     # загружаем уровень
@@ -588,6 +644,18 @@ if __name__ == '__main__':
     coins = pixel_font.render('0', 1, (255, 255, 255))
     coins_rect = coins.get_rect(center=(900, 50))
 
+    explosion_anim = {}
+    explosion_anim['lg'] = []       # взрыв покадрово
+    explosion_anim['sm'] = []
+    for i in range(1, 8):
+        fireexp = f'data/{i}.png'
+        img = pygame.image.load(fireexp).convert_alpha()
+        img.set_colorkey((0, 0, 0))
+        img_lg = pygame.transform.scale(img, (75, 75))
+        explosion_anim['lg'].append(img_lg)
+        img_sm = pygame.transform.scale(img, (32, 32))
+        explosion_anim['sm'].append(img_sm)
+
     all_sprites.draw(screen)
 
     running = True
@@ -602,7 +670,19 @@ if __name__ == '__main__':
                     player.timer += 1
                 else:
                     pygame.time.set_timer(pygame.USEREVENT, 0)
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:     # здесь типа выстрел по нажатию пробела
+                    player.shoot()
+
+        hits = pygame.sprite.groupcollide(enemy_group, bullets, True, True)     # проверка на столкновение
+        if hits:
+            player.coins += 10
         player.get_keys()
+        for hit in hits:
+            expl = Explosion(hit.rect.center, 'lg')
+            all_sprites.add(expl)
+
         coins = pixel_font.render(str(player.coins), 1, (255, 255, 255))
         hearts_group.draw(screen)
         all_sprites.draw(screen)
