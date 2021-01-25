@@ -47,6 +47,8 @@ def generate_level(level):
                 Tile('enemy', x, y)
             if level[y][x] == ',':
                 Tile('coin', x, y)
+            if level[y][x] == "!":
+                Tile("table", x, y)
             if level[y][x] == '@':
                 new_player = Player(x, y)
     return new_player
@@ -59,7 +61,7 @@ def draw_hearts(lives):
         heart = pygame.sprite.Sprite()
         heart.image = heart_image
         heart.rect = heart.image.get_rect()
-        heart.rect.top = 30
+        heart.rect.top = 10
         heart.rect.left = i * 50 + 50
         heart.add(hearts_group)
 
@@ -69,16 +71,75 @@ def terminate():
     sys.exit()
 
 
+def start_screen():
+    intro_text = ["THE",
+                  "SUITEHEARTS",
+                  "press any button to start"]
+
+    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    coun = 0
+    text_coord = 150
+    for line in intro_text:
+        if coun == 0:
+            font = pygame.font.Font("data/pixel3.ttf", 180)
+            string_rendered = font.render(line, 1, pygame.Color('white'))
+            intro_rect = string_rendered.get_rect()
+            text_coord += 10
+            intro_rect.top = text_coord
+            intro_rect.x = 350
+            text_coord += intro_rect.height
+            screen.blit(string_rendered, intro_rect)
+        elif coun == 1:
+            font = pygame.font.Font("data/pixel3.ttf", 80)
+            string_rendered = font.render(line, 1, pygame.Color('white'))
+            intro_rect = string_rendered.get_rect()
+            text_coord += 10
+            intro_rect.top = text_coord
+            intro_rect.x = 250
+            text_coord += intro_rect.height
+            screen.blit(string_rendered, intro_rect)
+        else:
+            font = pygame.font.Font("data/pixel3.ttf", 20)
+            string_rendered = font.render(line, 1, pygame.Color('white'))
+            intro_rect = string_rendered.get_rect()
+            text_coord += 350
+            intro_rect.top = text_coord
+            intro_rect.x = 350
+            text_coord += intro_rect.height
+            screen.blit(string_rendered, intro_rect)
+        coun += 1
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN:
+                return  # начинаем игру
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
 def end_screen():
     screen.fill((0, 0, 0))
     pixel_font = pygame.font.Font('data/pixel3.ttf', 108)
-    title = pixel_font.render('you lose =(', 1, (255, 255, 255))
-    title_rect = title.get_rect(left=100, top=150)
+    pixel_font2 = pygame.font.Font('data/pixel3.ttf', 40)
+    title = pixel_font.render('you lose!', 1, (255, 255, 255))
+    title_rect = title.get_rect(left=220, top=150)
     screen.blit(title, title_rect)
 
+    image = pygame.transform.scale(load_image("finalri.png"), (200, 200))
+    screen.blit(image, (400, 400))
+
+    motivation = pixel_font2.render('But determination is still burning', 1, (255, 255, 255))
+    motivation_rect = motivation.get_rect(left=120, top=290)
+    motivation2 = pixel_font2.render('in the depth of your heart. Lets try again!', 1, (255, 255, 255))
+    motivation_rect2 = motivation.get_rect(left=100, top=320)
+    screen.blit(motivation, motivation_rect)
+    screen.blit(motivation2, motivation_rect2)
+
     button_group = pygame.sprite.Group()
-    restart_btn = Button('restart', 100, 300, button_group)
-    quit_btn = Button('quit', 100, 400, button_group)
+    restart_btn = Button('restart', 200, 700, button_group)
+    quit_btn = Button('quit', 600, 700, button_group)
     pygame.time.set_timer(pygame.USEREVENT, 50)
 
     while True:
@@ -279,7 +340,7 @@ class Player(pygame.sprite.Sprite):
             if not self.bad_moment:
                 # сохраняем начальное положение камеры перед прыжком, чтобы проверять не сместилась ли камера
                 self.start_camera_dy = camera.dy
-            self.rect.y -= 0.4  # чтобы не было пересечений с полом
+            self.rect.y -= 0.4  # чтобы 3не было пересечений с полом
             self.jump = True
             camera.dy += 0.4
         # анимация ходьбы, если ни одна клавиша не нажата, то оставляем 1 frame
@@ -341,7 +402,7 @@ class Player(pygame.sprite.Sprite):
                 self.lives -= 1
                 self.damage = True
                 self.timer = 0
-                pygame.time.set_timer(pygame.USEREVENT, 1000)
+                pygame.time.set_timer(pygame.USEREVENT, 1500)
                 draw_hearts(self.lives)
         if self.lives == 0:
             self.death()
@@ -365,8 +426,8 @@ class Player(pygame.sprite.Sprite):
         self.player_image = self.frames[round(self.cur_frame) % len(self.frames)]
         self.player_image = pygame.transform.scale(self.player_image, (97, 130))
         self.image = pygame.transform.flip(self.player_image, self.left, False)
-        '''if self.damage:
-            self.drop()'''
+        if self.damage:
+            self.drop()
 
     def on_the_ground(self):
         # проверка стоит ли наш персонаж на земле
@@ -418,9 +479,10 @@ if __name__ == '__main__':
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     screen.fill((0, 0, 0))
-    pygame.display.set_caption('goodgamegg')
+    pygame.display.set_caption('TheSTHR')
     clock = pygame.time.Clock()
     pygame.time.set_timer(pygame.USEREVENT, 0)
+    start_screen()
 
     # прописываем группы спрайтов
     all_sprites = pygame.sprite.Group()
@@ -435,8 +497,9 @@ if __name__ == '__main__':
         'surface': load_image('ground.jpg'),
         'beautiful_surface': load_image('grass.png'),
         'coin': load_image('coins.png'),
-        'enemy': load_image('enemy.png'),
-        'enemy_1': load_image('enemy1.png')
+        'enemy': load_image('enemy1.png'),
+        'enemy_1': load_image('enemy1.png'),
+        'table': load_image('table.png')
     }
     heart_image = load_image('heart.png')
     # загружаем уровень
